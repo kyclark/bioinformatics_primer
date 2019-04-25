@@ -1,0 +1,344 @@
+ID   ZYG9_CAEEL              Reviewed;        1415 AA.
+AC   G5EEM5;
+DT   21-MAR-2012, integrated into UniProtKB/Swiss-Prot.
+DT   14-DEC-2011, sequence version 1.
+DT   18-JUL-2018, entry version 48.
+DE   RecName: Full=Zygote defective protein 9 {ECO:0000303|PubMed:9606208};
+GN   Name=zyg-9 {ECO:0000312|EMBL:AAC17865.1,
+GN   ECO:0000312|WormBase:F22B5.7}; ORFNames=F22B5.7;
+OS   Caenorhabditis elegans.
+OC   Eukaryota; Metazoa; Ecdysozoa; Nematoda; Chromadorea; Rhabditida;
+OC   Rhabditoidea; Rhabditidae; Peloderinae; Caenorhabditis.
+OX   NCBI_TaxID=6239;
+RN   [1] {ECO:0000305}
+RP   NUCLEOTIDE SEQUENCE [MRNA], FUNCTION, SUBCELLULAR LOCATION,
+RP   DEVELOPMENTAL STAGE, AND DISRUPTION PHENOTYPE.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:9606208};
+RX   PubMed=9606208; DOI=10.1083/jcb.141.5.1159;
+RA   Matthews L.R., Carter P., Thierry-Mieg D., Kemphues K.J.;
+RT   "ZYG-9, a Caenorhabditis elegans protein required for microtubule
+RT   organization and function, is a component of meiotic and mitotic
+RT   spindle poles.";
+RL   J. Cell Biol. 141:1159-1168(1998).
+RN   [2] {ECO:0000312|EMBL:CAA90359.1}
+RP   NUCLEOTIDE SEQUENCE [LARGE SCALE GENOMIC DNA].
+RC   STRAIN=Bristol N2;
+RX   PubMed=9851916; DOI=10.1126/science.282.5396.2012;
+RG   The C. elegans sequencing consortium;
+RT   "Genome sequence of the nematode C. elegans: a platform for
+RT   investigating biology.";
+RL   Science 282:2012-2018(1998).
+RN   [3] {ECO:0000305}
+RP   DISRUPTION PHENOTYPE.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:7371984};
+RX   PubMed=7371984; DOI=10.1016/0012-1606(80)90445-5;
+RA   Wood W.B., Hecht R., Carr S., Vanderslice R., Wolf N., Hirsh D.;
+RT   "Parental effects and phenotypic characterization of mutations that
+RT   affect early development in Caenorhabditis elegans.";
+RL   Dev. Biol. 74:446-469(1980).
+RN   [4] {ECO:0000305}
+RP   FUNCTION, AND DISRUPTION PHENOTYPE.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:7371984};
+RX   PubMed=6684994; DOI=10.1016/0092-8674(83)90203-9;
+RA   Strome S., Wood W.B.;
+RT   "Generation of asymmetry and segregation of germ-line granules in
+RT   early C. elegans embryos.";
+RL   Cell 35:15-25(1983).
+RN   [5] {ECO:0000305}
+RP   FUNCTION, DEVELOPMENTAL STAGE, AND DISRUPTION PHENOTYPE.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:3949074};
+RX   PubMed=3949074; DOI=10.1016/0012-1606(86)90180-6;
+RA   Kemphues K.J., Wolf N., Wood W.B., Hirsh D.;
+RT   "Two loci required for cytoplasmic organization in early embryos of
+RT   Caenorhabditis elegans.";
+RL   Dev. Biol. 113:449-460(1986).
+RN   [6] {ECO:0000305}
+RP   DEVELOPMENTAL STAGE.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:3224814};
+RX   PubMed=3224814;
+RA   Kemphues K.J., Kusch M., Wolf N.;
+RT   "Maternal-effect lethal mutations on linkage group II of
+RT   Caenorhabditis elegans.";
+RL   Genetics 120:977-986(1988).
+RN   [7] {ECO:0000305}
+RP   FUNCTION, AND DISRUPTION PHENOTYPE.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:2249759};
+RX   PubMed=2249759;
+RA   Mains P.E., Kemphues K.J., Sprunger S.A., Sulston I.A., Wood W.B.;
+RT   "Mutations affecting the meiotic and mitotic divisions of the early
+RT   Caenorhabditis elegans embryo.";
+RL   Genetics 126:593-605(1990).
+RN   [8] {ECO:0000305}
+RP   DISRUPTION PHENOTYPE.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:1614224};
+RX   PubMed=1614224; DOI=10.1016/0047-6374(92)90002-U;
+RA   Honda S., Matsuo M.;
+RT   "Lifespan shortening of the nematode Caenorhabditis elegans under
+RT   higher concentrations of oxygen.";
+RL   Mech. Ageing Dev. 63:235-246(1992).
+RN   [9] {ECO:0000305}
+RP   SUBCELLULAR LOCATION.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:10085292};
+RX   PubMed=10085292; DOI=10.1083/jcb.144.5.927;
+RA   Gonczy P., Schnabel H., Kaletta T., Amores A.D., Hyman T.,
+RA   Schnabel R.;
+RT   "Dissection of cell division processes in the one cell stage
+RT   Caenorhabditis elegans embryo by mutational analysis.";
+RL   J. Cell Biol. 144:927-946(1999).
+RN   [10] {ECO:0000305}
+RP   SUBCELLULAR LOCATION.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:12011109};
+RX   PubMed=12011109; DOI=10.1083/jcb.200202047;
+RA   Hannak E., Oegema K., Kirkham M., Gonczy P., Habermann B., Hyman A.A.;
+RT   "The kinetically dominant assembly pathway for centrosomal asters in
+RT   Caenorhabditis elegans is gamma-tubulin dependent.";
+RL   J. Cell Biol. 157:591-602(2002).
+RN   [11] {ECO:0000305}
+RP   FUNCTION, HETERODIMER WITH TAC-1, SUBCELLULAR LOCATION, AND DISRUPTION
+RP   PHENOTYPE.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:12956952};
+RX   PubMed=12956952; DOI=10.1016/S0960-9822(03)00597-9;
+RA   Srayko M., Quintin S., Schwager A., Hyman A.A.;
+RT   "Caenorhabditis elegans TAC-1 and ZYG-9 form a complex that is
+RT   essential for long astral and spindle microtubules.";
+RL   Curr. Biol. 13:1506-1511(2003).
+RN   [12] {ECO:0000305}
+RP   DISRUPTION PHENOTYPE.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:12885567};
+RX   PubMed=12885567; DOI=10.1016/S0012-1606(03)00216-1;
+RA   Yang H.-Y., McNally K., McNally F.J.;
+RT   "MEI-1/katanin is required for translocation of the meiosis I spindle
+RT   to the oocyte cortex in C elegans.";
+RL   Dev. Biol. 260:245-259(2003).
+RN   [13] {ECO:0000305}
+RP   FUNCTION, AND DISRUPTION PHENOTYPE.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:15866166};
+RX   PubMed=15866166; DOI=10.1016/j.devcel.2005.03.007;
+RA   Kimura A., Onami S.;
+RT   "Computer simulations and image processing reveal length-dependent
+RT   pulling force as the primary mechanism for C. elegans male pronuclear
+RT   migration.";
+RL   Dev. Cell 8:765-775(2005).
+RN   [14] {ECO:0000305}
+RP   FUNCTION, AND DISRUPTION PHENOTYPE.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:16054029};
+RX   PubMed=16054029; DOI=10.1016/j.devcel.2005.07.003;
+RA   Srayko M., Kaya A., Stamford J., Hyman A.A.;
+RT   "Identification and characterization of factors required for
+RT   microtubule growth and nucleation in the early C. elegans embryo.";
+RL   Dev. Cell 9:223-236(2005).
+RN   [15] {ECO:0000305}
+RP   FUNCTION, SUBCELLULAR LOCATION, DEVELOPMENTAL STAGE, DISRUPTION
+RP   PHENOTYPE, AND MUTAGENESIS OF GLY-203; GLY-488; ILE-862 AND GLU-1317.
+RC   STRAIN=Bristol N2 {ECO:0000269|PubMed:17666432};
+RX   PubMed=17666432; DOI=10.1242/jcs.004812;
+RA   Bellanger J.M., Carter J.C., Phillips J.B., Canard C., Bowerman B.,
+RA   Gonczy P.;
+RT   "ZYG-9, TAC-1 and ZYG-8 together ensure correct microtubule function
+RT   throughout the cell cycle of C. elegans embryos.";
+RL   J. Cell Sci. 120:2963-2973(2007).
+RN   [16] {ECO:0000305}
+RP   X-RAY CRYSTALLOGRAPHY (1.90 ANGSTROMS) OF 602-867, AND TOG DOMAIN.
+RX   PubMed=17355870; DOI=10.1016/j.str.2007.01.012;
+RA   Al-Bassam J., Larsen N.A., Hyman A.A., Harrison S.C.;
+RT   "Crystal structure of a TOG domain: conserved features of
+RT   XMAP215/Dis1-family TOG domains and implications for tubulin
+RT   binding.";
+RL   Structure 15:355-362(2007).
+CC   -!- FUNCTION: Plays a major role in organizing microtubules and
+CC       spindle poles during mitosis and meiosis in one-cell stage
+CC       embryos. Required for default nucleus positioning in oocytes.
+CC       {ECO:0000269|PubMed:12956952, ECO:0000269|PubMed:15866166,
+CC       ECO:0000269|PubMed:16054029, ECO:0000269|PubMed:17666432,
+CC       ECO:0000269|PubMed:2249759, ECO:0000269|PubMed:3949074,
+CC       ECO:0000269|PubMed:6684994, ECO:0000269|PubMed:9606208}.
+CC   -!- SUBUNIT: Interacts with tac-1 to form a heterodimer.
+CC       {ECO:0000269|PubMed:12956952}.
+CC   -!- INTERACTION:
+CC       G5ECG0:tac-1; NbExp=13; IntAct=EBI-320102, EBI-320612;
+CC   -!- SUBCELLULAR LOCATION: Cytoplasm, cytoskeleton, spindle pole
+CC       {ECO:0000269|PubMed:10085292, ECO:0000269|PubMed:12011109,
+CC       ECO:0000269|PubMed:12956952, ECO:0000269|PubMed:17666432,
+CC       ECO:0000269|PubMed:9606208}. Cytoplasm, cytoskeleton, microtubule
+CC       organizing center, centrosome {ECO:0000269|PubMed:10085292,
+CC       ECO:0000269|PubMed:12011109, ECO:0000269|PubMed:12956952,
+CC       ECO:0000269|PubMed:17666432, ECO:0000269|PubMed:9606208}.
+CC       Cytoplasm {ECO:0000269|PubMed:10085292,
+CC       ECO:0000269|PubMed:12011109, ECO:0000269|PubMed:12956952,
+CC       ECO:0000269|PubMed:17666432, ECO:0000269|PubMed:9606208}.
+CC       Note=Cycles between cytoplasm and centrosome during mitosis in a
+CC       cell cycle- dependent manner. Centrosomal recruitment requires
+CC       tbg-1.
+CC   -!- DEVELOPMENTAL STAGE: Expressed maternally during oogenesis.
+CC       Observed during mitotic cell cycle from interphase through to
+CC       early anaphase. {ECO:0000269|PubMed:17666432,
+CC       ECO:0000269|PubMed:3224814, ECO:0000269|PubMed:3949074,
+CC       ECO:0000269|PubMed:9606208}.
+CC   -!- DOMAIN: The TOG (tumor overexpressed gene) domains are arranged in
+CC       the N-terminal region with each domain composed of six (for the
+CC       most part non-canonical) HEAT repeats and forming a oblong paddle-
+CC       like structure. 3D-structure analysis shows the presence of
+CC       additional HEAT repeats that are not detected by sequence-based
+CC       prediction programs. Intra-HEAT loops are positioned along a face
+CC       of the TOG domain and bind to a single alpha/beta-tubulin
+CC       heterodimer. The TOG domains seem to be structurally and
+CC       functionally polarized. Differential functions may range from
+CC       microtubule (MT) lattice binding and/or free tubulin heterodimer
+CC       binding to potentiating stable incorporation of tubulin into the
+CC       MT lattice. {ECO:0000305, ECO:0000305|PubMed:17355870}.
+CC   -!- DISRUPTION PHENOTYPE: Maternal-effect embryonic lethal with
+CC       meiotic and mitotic spindle positioning defects in one-cell stage
+CC       embryos. {ECO:0000269|PubMed:12885567,
+CC       ECO:0000269|PubMed:12956952, ECO:0000269|PubMed:15866166,
+CC       ECO:0000269|PubMed:16054029, ECO:0000269|PubMed:1614224,
+CC       ECO:0000269|PubMed:17666432, ECO:0000269|PubMed:2249759,
+CC       ECO:0000269|PubMed:3949074, ECO:0000269|PubMed:6684994,
+CC       ECO:0000269|PubMed:7371984, ECO:0000269|PubMed:9606208}.
+CC   -!- SIMILARITY: Belongs to the TOG/XMAP215 family. {ECO:0000255}.
+CC   -----------------------------------------------------------------------
+CC   Copyrighted by the UniProt Consortium, see https://www.uniprot.org/terms
+CC   Distributed under the Creative Commons Attribution (CC BY 4.0) License
+CC   -----------------------------------------------------------------------
+DR   EMBL; AF035197; AAC17865.1; -; mRNA.
+DR   EMBL; Z50044; CAA90359.1; -; Genomic_DNA.
+DR   PIR; T21244; T21244.
+DR   RefSeq; NP_495784.1; NM_063383.4.
+DR   UniGene; Cel.17001; -.
+DR   PDB; 2OF3; X-ray; 1.90 A; A=602-867.
+DR   PDBsum; 2OF3; -.
+DR   ProteinModelPortal; G5EEM5; -.
+DR   SMR; G5EEM5; -.
+DR   BioGrid; 39679; 16.
+DR   ComplexPortal; CPX-372; Zyg-9/Tac-1 complex.
+DR   IntAct; G5EEM5; 7.
+DR   STRING; 6239.F22B5.7; -.
+DR   EPD; G5EEM5; -.
+DR   PaxDb; G5EEM5; -.
+DR   PeptideAtlas; G5EEM5; -.
+DR   PRIDE; G5EEM5; -.
+DR   EnsemblMetazoa; F22B5.7; F22B5.7; WBGene00006994.
+DR   GeneID; 174350; -.
+DR   KEGG; cel:CELE_F22B5.7; -.
+DR   CTD; 174350; -.
+DR   WormBase; F22B5.7; CE20707; WBGene00006994; zyg-9.
+DR   eggNOG; KOG1820; Eukaryota.
+DR   eggNOG; ENOG410XPTW; LUCA.
+DR   GeneTree; ENSGT00390000014757; -.
+DR   InParanoid; G5EEM5; -.
+DR   KO; K16803; -.
+DR   OMA; GRMADKD; -.
+DR   OrthoDB; EOG091G00YR; -.
+DR   PhylomeDB; G5EEM5; -.
+DR   EvolutionaryTrace; G5EEM5; -.
+DR   PRO; PR:G5EEM5; -.
+DR   Proteomes; UP000001940; Chromosome II.
+DR   Bgee; WBGene00006994; -.
+DR   GO; GO:0005813; C:centrosome; IDA:UniProtKB.
+DR   GO; GO:0005737; C:cytoplasm; IDA:WormBase.
+DR   GO; GO:0000776; C:kinetochore; IDA:UniProtKB.
+DR   GO; GO:0072687; C:meiotic spindle; IDA:UniProtKB.
+DR   GO; GO:0005874; C:microtubule; IEA:UniProtKB-KW.
+DR   GO; GO:0000922; C:spindle pole; IDA:UniProtKB.
+DR   GO; GO:0008017; F:microtubule binding; ISS:WormBase.
+DR   GO; GO:0051010; F:microtubule plus-end binding; IBA:GO_Central.
+DR   GO; GO:0051301; P:cell division; IEA:UniProtKB-KW.
+DR   GO; GO:0051298; P:centrosome duplication; IBA:GO_Central.
+DR   GO; GO:0009792; P:embryo development ending in birth or egg hatching; IMP:WormBase.
+DR   GO; GO:0030951; P:establishment or maintenance of microtubule cytoskeleton polarity; IBA:GO_Central.
+DR   GO; GO:0000212; P:meiotic spindle organization; IMP:WormBase.
+DR   GO; GO:0046785; P:microtubule polymerization; IBA:GO_Central.
+DR   GO; GO:0007017; P:microtubule-based process; IMP:WormBase.
+DR   GO; GO:0051231; P:spindle elongation; IMP:UniProtKB.
+DR   GO; GO:0007051; P:spindle organization; IMP:UniProtKB.
+DR   Gene3D; 1.25.10.10; -; 3.
+DR   InterPro; IPR011989; ARM-like.
+DR   InterPro; IPR016024; ARM-type_fold.
+DR   InterPro; IPR021133; HEAT_type_2.
+DR   InterPro; IPR034085; TOG.
+DR   InterPro; IPR029632; Zyg-9.
+DR   PANTHER; PTHR12609:SF1; PTHR12609:SF1; 1.
+DR   SMART; SM01349; TOG; 3.
+DR   SUPFAM; SSF48371; SSF48371; 5.
+DR   PROSITE; PS50077; HEAT_REPEAT; 2.
+PE   1: Evidence at protein level;
+KW   3D-structure; Cell cycle; Cell division; Coiled coil;
+KW   Complete proteome; Cytoplasm; Cytoskeleton; Meiosis; Microtubule;
+KW   Mitosis; Reference proteome; Repeat.
+FT   CHAIN         1   1415       Zygote defective protein 9.
+FT                                /FTId=PRO_0000416050.
+FT   REPEAT       30     68       HEAT 1. {ECO:0000255}.
+FT   REPEAT       95    132       HEAT 2. {ECO:0000255}.
+FT   REPEAT      135    172       HEAT 3. {ECO:0000255}.
+FT   REPEAT      179    217       HEAT 4. {ECO:0000255|PROSITE-
+FT                                ProRule:PRU00103}.
+FT   REPEAT      339    377       HEAT 5. {ECO:0000255}.
+FT   REPEAT      381    418       HEAT 6. {ECO:0000255}.
+FT   REPEAT      420    457       HEAT 7. {ECO:0000255}.
+FT   REPEAT      464    502       HEAT 8. {ECO:0000255|PROSITE-
+FT                                ProRule:PRU00103}.
+FT   REPEAT      706    743       HEAT 9. {ECO:0000255}.
+FT   REPEAT      764    801       HEAT 10. {ECO:0000255}.
+FT   REPEAT      804    841       HEAT 11. {ECO:0000255}.
+FT   REGION        1    250       TOG 1. {ECO:0000305|PubMed:17355870}.
+FT   REGION      251    530       TOG 2. {ECO:0000305|PubMed:17355870}.
+FT   REGION      602    867       TOG 3. {ECO:0000305|PubMed:17355870}.
+FT   COILED       21     48       {ECO:0000255}.
+FT   COMPBIAS    581    584       Poly-Lys. {ECO:0000255}.
+FT   COMPBIAS    972    978       Poly-Ser. {ECO:0000255}.
+FT   MUTAGEN     203    203       G->E: In or628; decrease in abundance at
+FT                                centromeres.
+FT                                {ECO:0000269|PubMed:17666432}.
+FT   MUTAGEN     488    488       G->E: In or593; decrease in abundance at
+FT                                centromeres.
+FT                                {ECO:0000269|PubMed:17666432}.
+FT   MUTAGEN     862    862       I->K: In or635; reduction in tac-1
+FT                                binding. {ECO:0000269|PubMed:17666432}.
+FT   MUTAGEN    1317   1317       E->K: In or643; decrease in abundance at
+FT                                centromeres and in the cytoplasm and
+FT                                reduction in tac-1 binding.
+FT                                {ECO:0000269|PubMed:17666432}.
+FT   HELIX       611    620       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       634    645       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       650    656       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       661    677       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       679    684       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       686    696       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       702    721       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       728    740       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       741    743       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       747    764       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       766    775       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       776    778       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       782    799       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       802    807       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       809    813       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       814    818       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       822    839       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       842    847       {ECO:0000244|PDB:2OF3}.
+FT   HELIX       852    865       {ECO:0000244|PDB:2OF3}.
+SQ   SEQUENCE   1415 AA;  156189 MW;  9518FFA233ABB3A6 CRC64;
+     MSNWDYLDEV DILPKLPPNF DELRESKKWQ ERKEALEALL KVLTDNERLS TKASYAELIG
+     HLQMVLAKDA NINCQALAAK CIGKFATGLR AKFSSFAGPL LPVIFEKMKE KKPMLREPLV
+     DCSNEVGRTM QSLETGQEDI LAALAKPNPQ IKQQTALFVA RQLDLVVPAK QPKGFIKAVV
+     PVFGKLTGDA DQDVREASLQ GLGAVQRIIG DKNVKNLLGD ASSDEGKMKK IGEYAEKSTA
+     SFAEEQAKNA PPVAPTSSTP SASAASGDPS GGTATAVVSS GAPVAEADPW DFLDAFDVLS
+     KMPDGFDTNI ESKKWQERKE ALEGLLQLIT ANPKLDPKAN YGALVERLQK VLEKDANINV
+     AALAANCITG IANGLRTKFQ PFAVSVTPII FEKFKEKKPT LRDPLVACID AVVATTNLEA
+     VGEIVLAALG KPNPSIKTQT DLFLQRCFMK LNSQTMPKKT LKTLIPSLIK HSGDSDSEVR
+     EASYAAMGAM MRAIGEKPSL QLLADIASDN LKMSKIKEFH QKALDEAGPA EIAEMVKSIH
+     KADAPPAAAP PKKTAPPKKQ PEDEEVVEEE DEPLKPPPGD KKKKVPVKEN EENEPPVVAP
+     KAELLLSDNE DKKQRIKEEK QLKLVKWNFQ APTDEHISQL QTLLGNQAKV SLMSQLFHKD
+     FKQHLAALDS LVRLADTSPR SLLSNSDLLL KWCTLRFFET NPAALIKVLE LCKVIVELIR
+     DTETPMSQEE VSAFVPYLLL KTGEAKDNMR TSVRDIVNVL SDVVGPLKMT PMLLDALKSK
+     NARQRSECLL VIEYYITNAG ISPLKSLSVE KTVAPFVGDK DVNVRNAAIN VLVACFKFEG
+     DQMWKAAGRM ADKDKSLVEE RIKRTGVKPG SGVVTSPPTG GPKILVPQQQ GSVVRRPASR
+     SRTREPEPEE VQSDTFTIRQ DTMPPKTSSR YALRDDVFSS AMGRLDGTQV ITPPQPVNGW
+     SNNTFQMKRT NSSSSISSID TSDQIQRSIN NISSSLADVA QDAMFQVTYV LNQPEQRHLV
+     DRRADLVFRA SAAQLDLVIE EFNAGRDVSG TMDACTQMLF ILMGGVETEH GLEPLNASPD
+     TVKAIISSVL RCIIQIGNTE SGYGMARSLN RLAMRLIYRV ELSNLLCGLI LAMTESLQMN
+     TGITELVSKL SSKWCDELEK RRAQLRASDI VDSFNAFYVC ALTELKMDIS DSHILIVDNY
+     LERVILQQGD VVLDAARRLS RPHMHLTSMI NKILQMMRER KIDPIMPGTL EARMPQEDEA
+     VVVRSGVQVS IDNILRDTSM AVKHIEQLNI LIASSDRSWN EYMEYLKNNP MGELIKELVG
+     ECSRKKRIDF NLSHVVKSSM AVFKAMAATG PVQEEGRITP TDINRMDTMI VGTPLSRGDA
+     TITRARGNMI RPKRTTLSRD QMANIRHTLD RVKNH
+//

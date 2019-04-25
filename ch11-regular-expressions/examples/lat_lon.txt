@@ -1,0 +1,9 @@
+attr.lat_lon             : 27.83387,-65.4906
+attr.lat_lon             : 29.3 N 122.08 E
+attr.lat_lon             : 28.56_-88.70377
+This line will not be included
+attr.lat_lon             : 39.283N 76.611 W
+attr.lat_lon             : 78 N 5 E
+attr.lat_lon             : missing
+attr.lat_lon             : 0.00 N, 170.00 W
+attr.lat_lon             : 11.46'45.7" 93.01'22.3"

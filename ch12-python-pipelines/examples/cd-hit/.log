@@ -1,0 +1,7 @@
+CRITICAL:root:INT: Exiting early!
+DEBUG:root:##################################################
+DEBUG:root:BEGAN 2019-04-11 10:40:09.901441
+DEBUG:root:Found cd-hit "/Users/kyclark/.local/bin/cd-hit"
+DEBUG:root:Running "/Users/kyclark/.local/bin/cd-hit -c 0.9 -i unclustered-proteins/proteins.fa -o unclustered-proteins/proteins.fa.cdhit"
+DEBUG:root:Finished cd-hit, found cluster file "unclustered-proteins/proteins.fa.cdhit"
+CRITICAL:root:cdhit "proteins.fa.cdhit" is not a file

@@ -1,0 +1,7 @@
+# Find unclustered proteins
+
+The file "cdhit60.3+.clstr" contains all of the GI numbers for
+proteins that were clustered and put into hmm profiles.  The file
+"proteins.fa" contains all proteins (the header is only the GI
+number).  Extract the proteins from the "proteins.fa" file that were
+not clustered.

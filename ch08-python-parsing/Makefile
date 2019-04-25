@@ -1,2 +1,2 @@
 pdf:
-	pandoc python-parsing.md -F ../../bin/include.hs -o $(shell basename $(shell pwd)).pdf
+	pandoc python-parsing.md -o $(shell basename $(shell pwd)).pdf

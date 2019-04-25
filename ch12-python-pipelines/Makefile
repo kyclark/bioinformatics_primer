@@ -1,2 +1,2 @@
 pdf:
-	pandoc python-pipelines.md -F ../../bin/include.hs -o $(shell basename $(shell pwd)).pdf
+	pandoc python-pipelines.md -o $(shell basename $(shell pwd)).pdf

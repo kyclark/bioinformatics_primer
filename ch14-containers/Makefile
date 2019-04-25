@@ -1,2 +1,2 @@
 pdf:
-	pandoc containers.md -F ../../bin/include.hs -o $(shell basename $(shell pwd)).pdf
+	pandoc containers.md -o $(shell basename $(shell pwd)).pdf

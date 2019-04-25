@@ -1,2 +1,2 @@
 pdf:
-	pandoc cyverse-apps.md -F ../../bin/include.hs -o $(shell basename $(shell pwd)).pdf
+	pandoc cyverse-apps.md -o $(shell basename $(shell pwd)).pdf

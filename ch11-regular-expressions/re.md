@@ -548,8 +548,8 @@ for phone in phones:
     print('{}\t{}'.format(phone, phone_re.match(phone)))
 ```
 
-    (800)555-1212	<_sre.SRE_Match object; span=(0, 13), match='(800)555-1212'>
-    (800) 555-1212	<_sre.SRE_Match object; span=(0, 14), match='(800) 555-1212'>
+    (800)555-1212	None
+    (800) 555-1212	None
     (800)  555-1212	<_sre.SRE_Match object; span=(0, 15), match='(800)  555-1212'>
 
 
@@ -956,7 +956,6 @@ re.findall('([+-]?\d+(?:\.\d+)?)', 'Lat is "-27.83387" and lon is "+132.43."')
     ['-27.83387', '+132.43']
 
 
-
 There are many resources you can use to thoroughly learn regular expressions, so I won't try to cover them completely here. I will mostly try to introduce the general idea and show you some useful regexes you could steal.
 
 Here is an example of how you can embed regexes in your Python code. This version can parse all the versions of latitude/longitude shown above. This code uses parens to create capture groups which it then uses `match.group(n)` to extract:
@@ -977,9 +976,9 @@ $ cat -n parse_lat_lon.py
     12
     13	file = args[0]
     14
-    15	float_ = r'[+-]?\d+\.*\d*'
-    16	ll1 = re.compile('(' + float_ + ')\s*[,_]\s*(' + float_ + ')')
-    17	ll2 = re.compile('(' + float_ + ')(?:\s*([NS]))?(?:\s*,)?\s+(' + float_ +
+    15	float_re = r'[+-]?\d+\.*\d*'
+    16	ll1 = re.compile('(' + float_re + ')\s*[,_]\s*(' + float_re + ')')
+    17	ll2 = re.compile('(' + float_re + ')(?:\s*([NS]))?(?:\s*,)?\s+(' + float_re +
     18	                 ')(?:\s*([EW])?)')
     19	loc_hms = r"""
     20	\d+\.\d+'\d+\.\d+"
@@ -1058,7 +1057,6 @@ To run the code below, you will need to install the `dateparser` module:
 ````
 $ python3 -m pip install dateparser
 ````
-
 
 ```python
 import dateparser

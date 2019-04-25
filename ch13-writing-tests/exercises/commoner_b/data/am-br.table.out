@@ -1,0 +1,38 @@
++-----------+-----------+------------+
+| word1     | word2     |   distance |
+|-----------+-----------+------------|
+| a         | a         |          0 |
+| about     | about     |          0 |
+| and       | and       |          0 |
+| as        | as        |          0 |
+| beer      | beer      |          0 |
+| faults    | faults    |          0 |
+| forgot    | forgot    |          0 |
+| generally | generally |          0 |
+| good      | good      |          0 |
+| had       | had       |          0 |
+| have      | have      |          0 |
+| i         | i         |          0 |
+| improve   | improve   |          0 |
+| into      | into      |          0 |
+| last      | last      |          0 |
+| merits    | merits    |          0 |
+| my        | my        |          0 |
+| night     | night     |          0 |
+| of        | of        |          0 |
+| our       | our       |          0 |
+| ourselves | ourselves |          0 |
+| put       | put       |          0 |
+| set       | set       |          0 |
+| such      | such      |          0 |
+| that      | that      |          0 |
+| the       | the       |          0 |
+| thoughts  | thoughts  |          0 |
+| to        | to        |          0 |
+| us        | us        |          0 |
+| we        | we        |          0 |
+| went      | went      |          0 |
+| which     | which     |          0 |
+| with      | with      |          0 |
+| without   | without   |          0 |
++-----------+-----------+------------+

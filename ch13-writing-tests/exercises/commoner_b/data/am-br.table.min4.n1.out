@@ -1,0 +1,29 @@
++-----------+-----------+------------+
+| word1     | word2     |   distance |
+|-----------+-----------+------------|
+| about     | about     |          0 |
+| analyze   | analyse   |          1 |
+| beer      | beer      |          0 |
+| faults    | faults    |          0 |
+| forgot    | forgot    |          0 |
+| generally | generally |          0 |
+| good      | good      |          0 |
+| have      | have      |          0 |
+| improve   | improve   |          0 |
+| into      | into      |          0 |
+| last      | last      |          0 |
+| license   | licence   |          1 |
+| merits    | merits    |          0 |
+| night     | night     |          0 |
+| organize  | organise  |          1 |
+| ourselves | ourselves |          0 |
+| pretense  | pretence  |          1 |
+| recognize | recognise |          1 |
+| such      | such      |          0 |
+| that      | that      |          0 |
+| thoughts  | thoughts  |          0 |
+| went      | went      |          0 |
+| which     | which     |          0 |
+| with      | with      |          0 |
+| without   | without   |          0 |
++-----------+-----------+------------+

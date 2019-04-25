@@ -1,0 +1,12 @@
++---------+---------+------------+
+| word1   | word2   |   distance |
+|---------+---------+------------|
+| brown   | brown   |          0 |
+| dog     | dog     |          0 |
+| fox     | fox     |          0 |
+| jumps   | jumps   |          0 |
+| lazy    | lazy    |          0 |
+| over    | over    |          0 |
+| quick   | quick   |          0 |
+| the     | the     |          0 |
++---------+---------+------------+

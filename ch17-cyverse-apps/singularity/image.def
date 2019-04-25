@@ -1,0 +1,27 @@
+BootStrap: docker
+From: ubuntu:latest
+
+%environment
+    PATH=/app/stampede2-template/scripts:$PATH
+
+%runscript
+    exec lc.py
+
+%post
+    apt-get update
+    apt-get install -y locales git 
+    locale-gen en_US.UTF-8
+
+    #
+    # Put everything into $APP_DIR
+    #
+    mkdir -p /app
+    cd /app
+    git clone git@github.com:hurwitzlab/stampede2-template.git
+
+    # 
+    # Mount points for TACC directories
+    # 
+    mkdir /home1
+    mkdir /scratch
+    mkdir /work

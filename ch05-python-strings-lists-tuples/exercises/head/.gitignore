@@ -1,5 +1,0 @@
-*.swp
-.pytest*
-__pycache__
-*~
-.DS_Store

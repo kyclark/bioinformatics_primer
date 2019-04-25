@@ -330,21 +330,34 @@ And here is my `$PATH` on the HPC at the University of Ariziona:
 /cm/local/apps/environment-modules/4.0.0/bin
 ```
 
-I've used "sed" (or "gsed" which is GNU sed) to add a newline after each colon so you can more easily see that the directories are separated by colons. You could build them into your own `$HOME` directory, but it will be easier if you just add this shared directory to your $PATH. From the command line, you can do this:
+I've used "sed" (or "gsed" which is GNU sed) to add a newline after each colon so you can more easily see that the directories are separated by colons. If you use the `which` command to see where a program lives, you can see that it is found in a directory that is included in your `$PATH`:
+
+````
+$ which sed
+/usr/bin/sed
+$ which python
+/anaconda3/bin/python
+````
+
+By definition, if a program's location is not in your `$PATH`, then `which` cannot find it, and that means you cannot run it without giving a full path to the program, e.g., `/usr/sbin/foobar/baz`. 
+
+In this repository I have included a `bin` directory that has some useful Python programs like `new_py.py` which we will use later to stub out new Python programs. In order to use them, you have three options:
+
+1. Use the complete path to the programs. E.g., if you have installed this into `$HOME/ppds`, then execute `$HOME/ppds/bin/new_py.py`
+2. Copy the contents of the `bin` directory to one of the other directories that are already in your `$PATH`, e.g., `cp $HOME/ppds/bin/* /usr/local/bin`, but that might require root privilege that you don't have.
+3. Add `$HOME/ppds/bin` to your `$PATH`
 
 ```
-export PATH="/rsgrps/bh_class/conda/bin:/rsgrps/bh_class/bin:$PATH"
+export PATH="$HOME/ppds/bin:$PATH"
 ```
 
-You just told your shell (bash) to set the `$PATH` variable to have put the "/rsgrps/bh_class/conda/bin" and  "/rsgrps/bh_class/bin" directories first and then whatever it was set to before. When you log out, however, this will be lost. Since we want this to happen each time we log in, so we can add this command to `$HOME/.bashrc`:
+You just told your shell (bash) to set the `$PATH` variable to `$HOME/ppds/bin` plus whatever is was before. Since we want this to happen each time we log in, so we can add this command to `$HOME/.bashrc`:
 
 ```
-echo "export PATH=/rsgrps/bh_class/conda/bin:/rsgrps/bh_class/bin:$PATH" >> ~/.bashrc
+echo "export PATH=$HOME/ppds/bin:$PATH" >> ~/.bashrc
 ```
 
 As you find or create useful programs that you would like to have available globally on your system (i.e., not just in the current working directory), you can create a location like `$HOME/bin` (or my preferred `$HOME/.local/bin`) and add this to your `$PATH` as well. You can add as many directories as you like (within reason).
-
-**NB:** It is hard to stress how important it is to understand your `$PATH`! 
 
 # Dotfiles
 

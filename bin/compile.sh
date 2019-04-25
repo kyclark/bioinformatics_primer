@@ -19,7 +19,8 @@ for MD in $(find . -maxdepth 2 -mindepth 2 -name \*.md | sort); do
 done
 
 for EXT in pdf epub; do
-    pandoc -F ../bin/include.hs "$TMP" -o "biosys.$EXT"
+    #pandoc -F ../bin/include.hs "$TMP" -o "PPDS.$EXT"
+    pandoc "$TMP" -o "PPDS.$EXT"
 done
 
 rm "$TMP"

@@ -43,10 +43,6 @@ We are going to create a minimal database to track the abundance of species in v
 3. Name linking tables [table1] + underscore + "to" + underscore + [table2]
 4. Always have a primary key that is an auto-incremented integer
 
-Here is a simple E/R (entity-relationship) graph of the schema (created with SQL::Translator):
-
-![](/assets/tables.png)
-
 You can instantiate the database by calling `make db` in the "csv" directory to _first remove the existing database_ and then recreate it by redirecting the "tables.sql" file into `sqlite3`:
 
 ```

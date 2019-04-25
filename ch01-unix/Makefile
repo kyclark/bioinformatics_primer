@@ -1,2 +1,2 @@
 pdf:
-	pandoc unix.md -F ../../bin/include.hs -o 02-unix.pdf
+	pandoc unix.md -o $(shell basename $(shell pwd)).pdf

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Author : Ken Youens-Clark <kyclark@email.arizona.edu>
+Author : Ken Youens-Clark <kyclark@gmail.com>
 Date   : 2019-02-06
 Purpose: Print the first lines and file names
 """

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Author:  Ken Youens-Clark <kyclark@email.arizona.edu
+Author:  Ken Youens-Clark <kyclark@gmail.com>
 Purpose: Load Centrifuge TSV files into SQLite db
 """
 

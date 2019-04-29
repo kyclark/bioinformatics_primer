@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Author:  Ken Youens-Clark <kyclark@email.arizona.edu>
+Author:  Ken Youens-Clark <kyclark@gmail.com>
 Purpose: Check the first/few records of a delimited text file
 """
 

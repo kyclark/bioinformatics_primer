@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
+Author:  Ken Youens-Clark <kyclark@gmail.com>
 Purpose: Filter Swissprot file for keywords, taxa
-Author:  Ken Youens-Clark <kyclark@email.arizona.edu>
 """
 
 import argparse

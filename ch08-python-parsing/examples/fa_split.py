@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Author:  Ken Youens-Clark
+Author:  Ken Youens-Clark <kyclark@gmail.com>
 Purpose: Split FASTA files
 NB:      If you have FASTQ files, maybe just use "split"?
 """

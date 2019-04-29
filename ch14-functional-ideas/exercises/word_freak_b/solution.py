@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Author : Ken Youens-Clark <kyclark@email.arizona.edu>
+Author : Ken Youens-Clark <kyclark@gmail.com>
 Date   : 2019-02-18
 Purpose: Word Frequency
 """

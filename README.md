@@ -7,6 +7,17 @@ This material is focused on writing complete, command-line programs that you can
 * Use parallelization techniques and hardware (HPC) to run programs faster
 * Package and distribute software to create reproducible workflows
 
+# Using Git
+
+I recommend you fork this repository and then add this repo as an upstream source:
+
+````
+$ git remote add upstream https://github.com/kyclark/practical_python_for_data_science.git
+````
+
+That way you can `git pull upstream master` to get new content. I write the exercises in such a way that you will create new content that should not conflict with content I make.
+
+
 # Programming Environment
 
 The material begins with the Unix command line. If you are working on Windows, I highly recommend you install Windows Subsystem for Linux and probably GitBash. If you are on an Apple computer, you have a full Unix system available through your Terminal app. The author uses a Mac with iTerm and vim editor to write, debug, and run programs. You may wish to use an editor like Sublime, TextWrangler, or Atom or an integrated develoment environment (IDE) like VSCode or PyCharm. However you choose to *write* code, this material assume you will *run* it from the command line. For many reasons, I have chosen not to use Jupyter Notebooks. Some chapters may include a Notebook, but I would prefer to have students write command-line programs and use a testing framework like PyTest to ensure that code runs correctly, top to bottom.

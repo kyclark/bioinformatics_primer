@@ -2,7 +2,7 @@
 
 SQLite (https://www.sqlite.org) is a lightweight, SQL/relational database that is available by default with Python (https://docs.python.org/3/library/sqlite3.html).  By using `import sqlite3` you can interact with an SQLite database.  So, let's create one, returning to our earlier Centrifuge output.  Here is the file "tables.sql" containing the SQL statements needed to drop and create the tables:
 
-```
+````
 drop table if exists tax;
 create table tax (
     tax_id integer primary key,
@@ -32,7 +32,7 @@ create table sample_to_tax (
     foreign key (sample_id) references sample (sample_id),
     foreign key (tax_id) references tax (tax_id)
 );
-```
+````
 
 Like Python, has data types of strings, integers, and floats (https://sqlite.org/datatype3.html).  Primary keys are unique values defining a record in a table.  You can place constraints on the allowed values of a field with conditions like `default` values or `not null` requirements as well as having the database enforce that some values are `unique` (such as NCBI taxonomy IDs).  You can also require that a particular combination of fields be unique, e.g., the sample/tax table has a unique constraint on the pairing of the sample/tax IDs.  Additionally, this database uses foreign keys (https://sqlite.org/foreignkeys.html) to maintain relationships between tables.  We will see in a moment how that prevents us from accidentally creating "orphan" records.
 
@@ -45,48 +45,48 @@ We are going to create a minimal database to track the abundance of species in v
 
 You can instantiate the database by calling `make db` in the "csv" directory to _first remove the existing database_ and then recreate it by redirecting the "tables.sql" file into `sqlite3`:
 
-```
+````
 $ make db
 find . -name centrifuge.db -exec rm {} \;
 sqlite3 centrifuge.db < tables.sql
-```
+````
 
 You can then run `sqlite3 centrifuge.db` to use the CLI (command-line interface) to the database.  Use `.help` inside SQLite to see all the "dot" commands (they begin with a `.`, cf. https://sqlite.org/cli.html):
 
-```
+````
 $ sqlite3 centrifuge.db
 SQLite version 3.13.0 2016-05-18 10:57:30
 Enter ".help" for usage hints.
 sqlite>
-```
+````
 
 I often rely on the `.schema` command to look at the tables in an SQLite db.  If you run that, you should see essentially the same thing as was in the "tables.sql" file.  An alternate way to create the database is to use the `.read tables.sql` command from within SQLite to have it read and execute the SQL statements in that file.
 
 We can manually insert a record into the `tax` table with an `insert` statement (https://sqlite.org/lang_insert.html).  Note how SQLite treats strings and numbers exactly like Python -- strings must be in quotes, numbers should be plain:
 
-```
+````
 sqlite> insert into tax (tax_name, ncbi_id) values ('Homo sapiens', 3606);
-```
+````
 
 We can add a dummy "sample" and link them like so:
 
-```
+````
 sqlite> insert into sample (sample_name) values ('foo');
 sqlite> insert into sample_to_tax (sample_id, tax_id, num_reads, abundance) values (1, 1, 100, .01);
-```
+````
 
 Verify that the data is there with a `select` statement (https://sqlite.org/lang_select.html):
 
-```
+````
 sqlite> select count(*) from tax;
 1
 sqlite> select * from tax;
 1|Homo sapiens|3606||0
-```
+````
 
 Use `.headers on` to see the column names:
 
-```
+````
 sqlite> .headers on
 sqlite> select * from tax;
 tax_id|tax_name|ncbi_id|tax_rank|genome_size
@@ -94,11 +94,11 @@ tax_id|tax_name|ncbi_id|tax_rank|genome_size
 sqlite> select * from sample;
 sample_id|sample_name
 1|foo
-```
+````
 
 That's still a bit hard to read, so we can set `.mode column` to see a bit better:
 
-```
+````
 sqlite> select * from sample;
 sample_id   sample_name
 ----------  -----------
@@ -111,32 +111,32 @@ sqlite> select * from sample_to_tax;
 sample_to_tax_id  sample_id   tax_id      num_reads   abundance   num_unique_reads
 ----------------  ----------  ----------  ----------  ----------  ----------------
 1                 1           1           100         0.01        0
-```
+````
 
 Often what we want is to `join` the tables so we can see just the data we want, e.g., use this SQL:
 
-```
+````
 select s.sample_name, t.tax_name, s2t.num_reads
 from sample s, tax t, sample_to_tax s2t
 where s.sample_id=s2t.sample_id
 and s2t.tax_id=t.tax_id;
-````
+`````
 
 And you should see:
    
-````
+`````
 sample_name  tax_name      num_reads
 -----------  ------------  ----------
 foo          Homo sapiens  100
-```
+````
 
 Now let's try to delete the `sample` record after we have turned on the enforcement of foreign keys:
 
-```
+````
 sqlite> PRAGMA foreign_keys = ON;
 sqlite> delete from sample where sample_id=1;
 Error: FOREIGN KEY constraint failed
-```
+````
 
 It would be bad to remove our sample and leave the sample/tax records in place.  This is what foreign keys do for us.  (Other databases -- PostgreSQL, MySQL, Oracle, etc. -- do this without having to explicitly turn on this feature, but keep in mind that this is an extremely lightweight, fast, and easy database to create and administer.  When you need more speed/power/safety, then you will move to another database.)
 
@@ -144,7 +144,7 @@ Obviously we're not going to manually enter our data by hand, so let's write a s
 
 First we're going to need to get our data, so do `make data` to download some TSV files from iMicrobe. Then you can load them:
 
-````
+`````
 $ ./load_centrifuge.py *.tsv
   1: Importing "YELLOWSTONE_SMPL_20717" (2)
 Loading "Synechococcus sp. JA-3-3Ab" (321327)
@@ -158,11 +158,11 @@ Loading "Staphylococcus sp. AntiMn-1" (1715860)
   5: Importing "YELLOWSTONE_SMPL_20725" (6)
   6: Importing "YELLOWSTONE_SMPL_20727" (7)
 Done
-````
+`````
 
 Here is the code that does that:
 
-```
+````
 #!/usr/bin/env python3
 """Load Centrifuge into SQLite db"""
 
@@ -182,11 +182,11 @@ def get_args():
     parser.add_argument('-d', '--dbname', help='Centrifuge db name',
                         metavar='str', type=str, default='centrifuge.db')
     return parser.parse_args()
-```
+````
 
 Our `main` is going to handle the arguments, ensuring the `--dbname` is a valid file, then processing each of the `tsv_file` arguments (note the `nargs` declaration to show that the program takes one or more TSV files).  Note that in order to keep this function short, I created two other functions, to import the samples and TSV files:
 
-```
+````
 # --------------------------------------------------
 def main():
     """main"""
@@ -220,11 +220,11 @@ def main():
         import_tsv(db, tsv_file, sample_id)
 
     print('Done')
-```
+````
 
 Here is the code to import a "sample."  It needs a sample_name (which we assume to be unique) and a database handle (which is a bit like filehandles which we've been dealing with -- it's the actual conduit from your code to the database).  First we have to check if the sample already exists in our table, and this requires we use a `cursor` (https://docs.python.org/3/library/sqlite3.html) to issue our `select` statement.  Rather than putting the sample name directly into the SQL (which is very insecure, see SQL injection/"Bobby Tables" XKCD https://xkcd.com/327), we use a `?` and pass the string as an argument to the `execute` function.  If nothing (`None`) is returned, we can safely `insert` the new record and get the newly created sample ID from the `lastrowid` function of the cursor; otherwise, the sample ID is in the `res` result list as the first field:
 
-```
+````
 # --------------------------------------------------
 def import_sample(sample_name, db):
     """Import sample"""
@@ -241,11 +241,11 @@ def import_sample(sample_name, db):
         sample_id = res[0]
 
     return sample_id
-```
+````
 
 The code to import the TSV file is similar.  We establish SQL statements to find/insert/update the sample/tax record, then we use the `csv` module to parse the TSV file, creating dictionaries of each record (a product of merging the first line/headers with each row of data).  Again, to keep this function short enough to fit on a "page," there is a separate function to find or create the taxonomy record.
 
-```
+````
 # --------------------------------------------------
 def import_tsv(db, file, sample_id):
     """Import TSV file"""
@@ -297,11 +297,11 @@ def import_tsv(db, file, sample_id):
         db.commit()
 
     return 1
-```
+````
 
 The find/create tax function works just the same as that for the sample:
 
-```
+````
 # --------------------------------------------------
 def find_or_create_tax(db, rec):
     """find or create the tax"""
@@ -335,11 +335,11 @@ def find_or_create_tax(db, rec):
     else:
         print('"{}" does not look like an NCBI tax id'.format(ncbi_id))
         return None
-```
+````
 
 If you use `make data`, several files will be downloaded from the iMicrobe FTP site for use by the `make load` step run the loader program:
 
-```
+````
 $ make load
 ./load_centrifuge.py *.tsv
   1: Importing "YELLOWSTONE_SMPL_20717" (1)
@@ -354,11 +354,11 @@ Loading "Staphylococcus sp. AntiMn-1" (1715860)
   5: Importing "YELLOWSTONE_SMPL_20725" (5)
   6: Importing "YELLOWSTONE_SMPL_20727" (6)
 Done
-```
+````
 
 Now we can inspect how many records were loaded into the database:
 
-```
+````
 $ sqlite3 centrifuge.db
 SQLite version 3.13.0 2016-05-18 10:57:30
 Enter ".help" for usage hints.
@@ -368,11 +368,11 @@ sqlite> select count(*) from sample;
 6
 sqlite> select count(*) from sample_to_tax;
 18
-```
+````
 
 But, again, we're not going to just sit here and manually write SQL to check out the data.  Let's write a program that takes an NCBI tax id as an argument and reports the samples where it is found.  You will need to `make tabulate` to run the command to install the "tabulate" module (https://pypi.python.org/pypi/tabulate) in order to run this program:
 
-```
+````
      1	#!/usr/bin/env python3
      2	"""Query centrifuge.db for NCBI tax id"""
      3	
@@ -455,11 +455,11 @@ But, again, we're not going to just sit here and manually write SQL to check out
     80	# --------------------------------------------------
     81	if __name__ == '__main__':
     82	    main()
-```
+````
 
 It takes as arguments a required NCBI tax id that can be a single value or a comma-separated list.  Options include the SQLite Centrifuge db, a column name to sort by, and whether to show in ascending or descending order.  The output is formatted with the `tabulate` module to produce a simple text table.  To query by one tax ID:
 
-```
+````
 $ ./query_centrifuge.py -t 321327
 sample_name             tax_name                      num_reads    abundance
 ----------------------  --------------------------  -----------  -----------
@@ -469,11 +469,11 @@ YELLOWSTONE_SMPL_20727  Synechococcus sp. JA-3-3Ab         1219         0.96
 YELLOWSTONE_SMPL_20717  Synechococcus sp. JA-3-3Ab           19         0.53
 YELLOWSTONE_SMPL_20719  Synechococcus sp. JA-3-3Ab          719         0.27
 YELLOWSTONE_SMPL_20725  Synechococcus sp. JA-3-3Ab         3781         0.2
-```
+````
 
 To query by more than one:
 
-```
+````
 $ ./query_centrifuge.py -t 321327,1307
 sample_name             tax_name                      num_reads    abundance
 ----------------------  --------------------------  -----------  -----------
@@ -484,11 +484,11 @@ YELLOWSTONE_SMPL_20717  Synechococcus sp. JA-3-3Ab           19         0.53
 YELLOWSTONE_SMPL_20719  Synechococcus sp. JA-3-3Ab          719         0.27
 YELLOWSTONE_SMPL_20725  Synechococcus sp. JA-3-3Ab         3781         0.2
 YELLOWSTONE_SMPL_20719  Streptococcus suis                    1         0
-```
+````
 
 To order by "num_reads" instead of "abundance":
 
-```
+````
 $ ./query_centrifuge.py -t 321327,1307 -o num_reads
 sample_name             tax_name                      num_reads    abundance
 ----------------------  --------------------------  -----------  -----------
@@ -499,11 +499,11 @@ YELLOWSTONE_SMPL_20719  Synechococcus sp. JA-3-3Ab          719         0.27
 YELLOWSTONE_SMPL_20721  Synechococcus sp. JA-3-3Ab          315         0.98
 YELLOWSTONE_SMPL_20717  Synechococcus sp. JA-3-3Ab           19         0.53
 YELLOWSTONE_SMPL_20719  Streptococcus suis                    1         0
-```
+````
 
 To sort ascending:
 
-```
+````
 $ ./query_centrifuge.py -t 321327,1307 -o num_reads -s asc
 sample_name             tax_name                      num_reads    abundance
 ----------------------  --------------------------  -----------  -----------
@@ -514,7 +514,4 @@ YELLOWSTONE_SMPL_20719  Synechococcus sp. JA-3-3Ab          719         0.27
 YELLOWSTONE_SMPL_20727  Synechococcus sp. JA-3-3Ab         1219         0.96
 YELLOWSTONE_SMPL_20725  Synechococcus sp. JA-3-3Ab         3781         0.2
 YELLOWSTONE_SMPL_20723  Synechococcus sp. JA-3-3Ab         6432         0.98
-```
-
-
-
+````

@@ -20,9 +20,7 @@ for MD in $(find . -maxdepth 2 -mindepth 2 -name \*.md -not -name README.md | so
 done
 
 pandoc "$TMP" -o "PPDS.epub"
-iconv -t utf-8 "$TMP" | pandoc -o PPDS.pdf --latex-engine=xelatex
-#pandoc "$TMP" -o PPDS.pdf --latex-engine=xelatex
-#pandoc "$TMP" -o PPDS.pdf --latex-engine=xelatex
+pandoc "$TMP" -o "PPDS.pdf"
 
 rm "$TMP"
 

@@ -96,20 +96,20 @@ def get_kmers(words, k, min_words):
     # Select kmers having enough words (can't use `pop`!)
 
     # Method 1: for loop
-    # ok = dict()
-    # for kmer in shared:
-    #     if len(shared[kmer]) >= min_words:
-    #         ok[kmer] = shared[kmer]
+    ok = dict()
+    for kmer in shared:
+        if len(shared[kmer]) >= min_words:
+            ok[kmer] = shared[kmer]
 
     # Method 2: list comprehension
-    ok = dict([(kmer, shared[kmer]) for kmer in shared
-               if len(shared[kmer]) >= min_words])
+    # ok = dict([(kmer, shared[kmer]) for kmer in shared
+    #            if len(shared[kmer]) >= min_words])
 
     # Method 3: map/filter
-    ok = dict(
-        map(lambda kmer: (kmer, shared[kmer]),
-            filter(lambda kmer: len(shared[kmer]) >= min_words,
-                   shared.keys())))
+    # ok = dict(
+    #     map(lambda kmer: (kmer, shared[kmer]),
+    #         filter(lambda kmer: len(shared[kmer]) >= min_words,
+    #                shared.keys())))
 
     return ok
 

@@ -70,7 +70,7 @@ def read_csv(file):
     if not os.path.isfile(file):
         die('"{}" is not a file'.format(file))
 
-    exercises = {}
+    exercises = []
     with open(file) as csvfile:
         reader = csv.DictReader(csvfile, delimiter=',')
         required = ['exercise', 'reps']
@@ -80,7 +80,9 @@ def read_csv(file):
                 file, ', '.join(required)))
 
         for row in reader:
-            exercises[row['exercise']] = list(map(int, row['reps'].split('-')))
+            name = row['exercise']
+            low, high = row['reps'].split('-')
+            exercises.append((name, int(low), int(high)))
 
     return exercises
 
@@ -94,14 +96,12 @@ def main():
     exercises = read_csv(args.file)
     table = []
 
-    for exercise in random.sample(exercises.keys(), k=args.num_exercises):
-        low, high = exercises[exercise]
-
+    for name, low, high in random.sample(exercises, k=args.num_exercises):
         if args.easy:
             low = int(low / 2)
             high = int(high / 2)
 
-        table.append((exercise, '{}-{}'.format(low, high)))
+        table.append((name, '{}'.format(random.randint(low, high))))
 
     print(tabulate(table, headers=('Exercise', 'Reps')))
 

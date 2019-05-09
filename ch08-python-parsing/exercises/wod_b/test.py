@@ -22,12 +22,12 @@ def test_usage():
 # --------------------------------------------------
 def test_runs01():
     expected = """
-Exercise       Reps
+Exercise         Reps
 -------------  ------
-Pushups        25-75
-Jumping Jacks  25-75
-Situps         40-100
-Pullups        10-30
+Pushups            32
+Jumping Jacks      56
+Situps             88
+Pullups            24
 """
 
     seed_flag = '-s' if random.choice([0, 1]) else '--seed'
@@ -39,12 +39,12 @@ Pullups        10-30
 # --------------------------------------------------
 def test_runs02():
     expected = """
-Exercise       Reps
+Exercise         Reps
 -------------  ------
-Pushups        12-37
-Jumping Jacks  12-37
-Situps         20-50
-Pullups        5-15
+Pushups            15
+Jumping Jacks      27
+Situps             44
+Pullups            12
 """
 
     seed_flag = '-s' if random.choice([0, 1]) else '--seed'
@@ -58,16 +58,16 @@ Pullups        5-15
 # --------------------------------------------------
 def test_runs03():
     expected = """
-Exercise    Reps
+Exercise      Reps
 ----------  ------
-Burpees     20-50
-Situps      40-100
-Crunches    20-30
-HSPU        5-20
-Pushups     25-75
-Jumprope    50-100
-Lunges      20-40
-Plank       30-60
+Burpees         28
+Situps          78
+Crunches        23
+HSPU             6
+Pushups         62
+Jumprope        93
+Lunges          25
+Plank           43
 """
 
     seed_flag = '-s' if random.choice([0, 1]) else '--seed'
@@ -80,11 +80,11 @@ Plank       30-60
 # --------------------------------------------------
 def test_runs04():
     expected = """
-Exercise                Reps
+Exercise                  Reps
 ----------------------  ------
-Hanging Chads           40-100
-Masochistic Elbowdowns  25-75
-Squatting Chinups       20-50
+Hanging Chads               86
+Masochistic Elbowdowns      50
+Squatting Chinups           35
 """
 
     seed_flag = '-s' if random.choice([0, 1]) else '--seed'

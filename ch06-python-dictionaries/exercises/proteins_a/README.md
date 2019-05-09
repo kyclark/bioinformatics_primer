@@ -1,6 +1,6 @@
 # Python Dictionaries: Translate DNA/RNA to AA
 
-Write a Python program called "translate_proteins.py" that translates a given DNA/RNA sequence to amino acids using a provided codon table. The output will be written to a file either provided by the user or a default of "out.txt". 
+Write a Python program called `translate_proteins.py` that translates a given DNA/RNA sequence to amino acids using a provided codon table. The output will be written to a file either provided by the user or a default of "out.txt". 
 
 # Expected Behavior
 
@@ -10,12 +10,7 @@ The DNA/RNA string and codon table are both required, so be sure to set `require
 $ ./translate_proteins.py
 usage: translate_proteins.py [-h] -c FILE [-o FILE] STR
 translate_proteins.py: error: the following arguments are required: STR, -c/--codons
-````
-
-Create help page on `-h` or `--help`:
-
-````
-[cholla@~/work/worked_examples/05-python-proteins]$ ./translate_proteins.py -h
+$ ./translate_proteins.py -h
 usage: translate_proteins.py [-h] -c FILE [-o FILE] STR
 
 Translate DNA/RNA to proteins
@@ -29,7 +24,7 @@ optional arguments:
                         A file with codon translations (default: None)
   -o FILE, --outfile FILE
                         Output filename (default: out.txt)
-````
+````						
 
 Die on a bad `--codons` argument:
 
@@ -107,4 +102,5 @@ test.py::test_bad_args PASSED                                            [ 50%]
 test.py::test_bad_codon_file PASSED                                      [ 75%]
 test.py::test_valid_input PASSED                                         [100%]
 
-=========================== 4 passed in 0.55 seconds ===========================````
+=========================== 4 passed in 0.55 seconds ===========================
+````

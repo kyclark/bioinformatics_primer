@@ -8,14 +8,14 @@ We'll use the term "parsing" to mean deriving meaning from structured text. In t
 
 If you've been using `new_py.py -a` to create new programs, you've already been using a parser -- one that uses the `argparse` module to derive meaning from command-line arguments that may or may not have flags or be defined by positions. Let's create a new program and see how it works:
 
-```
+````
 $ new_py.py -a test
 Done, see new script "test.py."
-```
+````
 
 If you check out the new script, it has a `get_args` function that will show you how to create named arguments for strings, integers, booleans, and positional arguments:
 
-```
+````
      1	#!/usr/bin/env python3
      2	"""
      3	Author : kyclark
@@ -90,11 +90,11 @@ If you check out the new script, it has a `get_args` function that will show you
     72	# --------------------------------------------------
     73	if __name__ == '__main__':
     74	    main()
-```
+````
 
 If you run without any arguments or with `-h|--help`, you get a usage statement:
 
-```
+````
 $ ./test.py
 usage: test.py [-h] [-a str] [-i int] [-f] str
 test.py: error: the following arguments are required: str
@@ -111,7 +111,7 @@ optional arguments:
   -a str, --arg str  A named string argument (default: )
   -i int, --int int  A named integer argument (default: 0)
   -f, --flag         A boolean flag (default: False)
-```
+````
 
 And the `argparse` module is able to turn the command line arguments into useful information:
 
@@ -145,7 +145,7 @@ For this, we'll use some data from a study from Yellowstone National Park (https
 
 One record from the first looks like this:
 
-```
+````
 readID       : Yellowstone_READ_00007510
 seqID        : cid|321327
 taxID        : 321327
@@ -154,11 +154,11 @@ score        : 640000
 hitLength    : 815
 queryLength  : 839
 numMatches   : 1
-```
+````
 
 One from the second looks like this:
 
-```
+````
 name           : synthetic construct
 taxID          : 32630
 taxRank        : species
@@ -166,7 +166,7 @@ genomeSize     : 26537524
 numReads       : 19
 numUniqueReads : 19
 abundance      : 0.0
-```
+````
 
 Let's write a program that shows a table of the number of records for each "taxID":
 
@@ -207,7 +207,7 @@ $ cat -n read_count_by_taxid.py
 
 As always, it prints a "usage" statement when run with no arguments.  It also uses the `os.path.splitext` function to get the file extension and make sure that it is ".sum."  Finally, if the input looks OK, then it uses the `csv.DictReader` module to parse each record of the file into a dictionary:
 
-```
+````
 $ ./read_count_by_taxid.py
 Usage: read_count_by_taxid.py SAMPLE.SUM
 $ ./read_count_by_taxid.py YELLOWSTONE_SMPL_20723.tsv
@@ -217,7 +217,7 @@ count	taxID
 6432	321327
 80	321332
 19	32630
-```
+````
 
 That's a start, but most people would rather see the a species name rather than the NCBI taxonomy ID, so we'll need to go look up  the taxIDs in the ".tsv" file:
 

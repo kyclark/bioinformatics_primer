@@ -122,7 +122,7 @@ Type `q` to "quit" the help. Use `/` to initiate a search, e.g., "/pop" to see h
 
 Let's write a script to play with a dictionary:
 
-```
+````
 $ cat -n bridge_of_death.py
      1	#!/usr/bin/env python3
      2
@@ -143,11 +143,11 @@ $ cat -n bridge_of_death.py
     17	    print('Right, off you go.')
     18	else:
     19	    print('You have been eaten by a grue.')
-```
+````
 
 And here it is in action:
 
-```
+````
 $ ./bridge_of_death.py
 {}
 Stop!
@@ -174,13 +174,13 @@ What is your quest? I seek the Holy Grail
 What is your favorite color? Blue. No yello--
 {'name': 'Sir Galahad of Camelot', 'quest': 'I seek the Holy Grail', 'favorite color': 'Blue. No yello--'}
 You have been eaten by a grue.
-```
+````
 
 # Gashlycrumb
 
 Dictionaries are perfect for looking up some bit of information by some value:
 
-```
+````
 $ ./gashlycrumb.py c
 C is for Clara who wasted away.
 $ ./gashlycrumb.py t
@@ -246,7 +246,7 @@ $ ./gashlycrumb.py b
 B is for Basil assaulted by bears.
 $ ./gashlycrumb.py 8
 I do not know "8"
-```
+````
 
 On line 47, we create the `lookup` using the first character of the line (`line[0]`).  On line 49, we look to see if we have that letter in the `lookup`, printing the line of text if we do or complaining if we don't.
 
@@ -292,16 +292,16 @@ But why?  Well, this has the great advantage of not having to declare four varia
 
 Notice that we create a new dict on line 15 with empty curlies `{}`.  In line 18, we have to check if the base exists in the dict; if it doesn't, we initialize it to 0, and then we increment it by one.  In line 25, we have to be careful when asking for a key that doesn't exist:
 
-```
+````
 >>> patch['dislikes']
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
 KeyError: 'dislikes'
-```
+````
 
 If we were counting a string of DNA like "AAAAAA," then there would be no C, G or T to report, so we have to use an `if/then` expression:
 
-```
+````
 >>> seq = 'AAAAAA'
 >>> counts = {}
 >>> for base in seq:
@@ -316,47 +316,47 @@ Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
 KeyError: 'G'
 >>> g = counts['G'] if 'G' in counts else 0
-```
+````
 
 Or we can use the `get` method of a dictionary to safely get a value by a key even if the key doesn't exist:
 
-```
+````
 >>> counts.get('G')
 >>> type(counts.get('G'))
 <class 'NoneType'>
-```
+````
 
 If you look at "dna4.py," you'll see it's exactly the same as "dna3.py" with this exception:
 
-```
+````
     23	counts = []
     24	for base in "acgt":
     25	    num = count.get(base, 0)
     26	    counts.append(str(num))
-```
+````
 
 The `get` method will not blow up your program, and it accepts an optional second argument for the default value when nothing is present:
 
-```
+````
 >>> cat.get('likes')
 >>> type(cat.get('likes'))
 <class 'NoneType'>
 >>> cat.get('likes', 'Cats like nothing')
 'Cats like nothing'
-```
+````
 
 ## Sidebar: Truthiness
 
 Note that you might be tempted to write:
 
-```
+````
 >>> cat.get('likes') or 'Cats like nothing'
 'Cats like nothing'
-```
+````
 
 Which appears to do the same thing, but compare with this:
 
-```
+````
 >>> d = {'x': 0, 'y': '', 'z': None}
 >>> for k in sorted(d.keys()):
 ...   print('{} = "{}"'.format(k, d.get(k) or 'NA'))
@@ -370,20 +370,20 @@ z = "NA"
 x = "0"
 y = ""
 z = "None"
-```
+````
 
 This is a minor but potentially pernicious error due to Python's idea of Truthiness (tm):
 
-```
+````
 >>> 1 == True
 True
 >>> 0 == False
 True
-```
+````
 
 The integer `1` is not actually the same thing as the boolean value `True`, but Python will treat it as such.  Vice verse for `0` and `False`.  The only true way to get around this is to explicitly check for `None`:
 
-```
+````
 >>> for k in sorted(d.keys()):
 ...   val = d.get(k)
 ...   print('{} = "{}"'.format(k, 'NA' if val is None else val))
@@ -391,11 +391,11 @@ The integer `1` is not actually the same thing as the boolean value `True`, but 
 x = "0"
 y = ""
 z = "NA"
-```
+````
 
 To get around the check, we could initialize the dict:
 
-```
+````
 $ cat -n dna5.py
      1    #!/usr/bin/env python3
      2    """Tetra-nucleotide counter"""
@@ -422,13 +422,13 @@ $ cat -n dna5.py
     23        counts.append(str(count[base]))
     24
     25    print(' '.join(counts))
-```
+````
 
 ## Back To Our Program
 
 Now when we check on line 18, we're only going to count bases that we initialized; further, we can then just use the `keys` method to get the bases:
 
-```
+````
 $ cat -n dna5.py
      1    #!/usr/bin/env python3
      2    """Tetra-nucleotide counter"""
@@ -455,11 +455,11 @@ $ cat -n dna5.py
     23        counts.append(str(count[base]))
     24
     25    print(' '.join(counts))
-```
+````
 
 This kind of checking and initializing is so common that there is a standard module to define a dictionary with a default value.  Unsurprisingly, it is called "defaultdict":
 
-```
+````
 $ cat -n dna6.py
      1    #!/usr/bin/env python3
      2    """Tetra-nucleotide counter"""
@@ -486,31 +486,31 @@ $ cat -n dna6.py
     23        counts.append(str(count[base]))
     24
     25    print(' '.join(counts))
-```
+````
 
 On line 16, we create a `defaultdict` with the `int` type (not in quotes) for which the default value will be zero:
 
-```
+````
 >>> from collections import defaultdict
 >>> counts = defaultdict(int)
 >>> counts['a']
 0
-```
+````
 
 Finally, I will show you the `Counter` that will do all the base-counting for you, returning a `defaultdict`:
 
-```
+````
 >>> from collections import Counter
 >>> c = Counter('AACTAC')
 >>> c['A']
 3
 >>> c['G']
 0
-```
+````
 
 And here is it in the script:
 
-```
+````
  $ cat -n dna7.py
      1    #!/usr/bin/env python3
      2    """Tetra-nucleotide counter"""
@@ -534,11 +534,11 @@ And here is it in the script:
     20        counts.append(str(count[base]))
     21
     22    print(' '.join(counts))
-```
+````
 
 So we can take that and create a program that counts all characters either from the command line or a file:
 
-```
+````
 $ cat -n char_count1.py
      1    #!/usr/bin/env python3
      2    """Character counter"""
@@ -569,46 +569,46 @@ a    20
 g    17
 c    12
 t    21
-```
+````
 
 # Methods
 
 The `keys` from a dict are in no particular order:
 
-```
+````
 >>> c = Counter('AAACTAGGGACTGA')
 >>> c
 Counter({'A': 6, 'G': 4, 'C': 2, 'T': 2})
 >>> c.keys()
 dict_keys(['A', 'C', 'T', 'G'])
-```
+````
 
 If you want them sorted, you must be explicit:
 
-```
+````
 >>> sorted(c.keys())
 ['A', 'C', 'G', 'T']
-```
+````
 
 Note that, unlike a list, you cannot call `sort` which makes sense as that will try to sort a list in-place:
 
-```
+````
 >>> c.keys().sort()
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
 AttributeError: 'dict_keys' object has no attribute 'sort'
-```
+````
 
 You can also just call `values` to get those:
 
-```
+````
 >>> c.values()
 dict_values([6, 2, 2, 4])
-```
+````
 
 Often you will want to go through the `items` in a dict and do something with the key and value:
 
-```
+````
 >>> for base, count in c.items():
 ...   print('{} = {}'.format(base, count))
 ...
@@ -616,11 +616,11 @@ A = 6
 C = 2
 T = 2
 G = 4
-```
+````
 
 But if you want to have the `keys` in a particular order, you can do this:
 
-```
+````
 >>> for base in sorted(c.keys()):
 ...   print('{} = {}'.format(base, c[base]))
 ...
@@ -628,25 +628,25 @@ A = 6
 C = 2
 G = 4
 T = 2
-```
+````
 
 Or you can notice that `items` returns a list of tuples:
 
-```
+````
 >>> c.items()
 dict_items([('A', 6), ('C', 2), ('T', 2), ('G', 4)])
-```
+````
 
 And you can call `sorted` on that:
 
-```
+````
 >>> sorted(c.items())
 [('A', 6), ('C', 2), ('G', 4), ('T', 2)]
-```
+````
 
 Which means this will work:
 
-```
+````
 >>> for base, count in sorted(c.items()):
 ...   print('{} = {}'.format(base, count))
 ...
@@ -654,33 +654,33 @@ A = 6
 C = 2
 G = 4
 T = 2
-```
+````
 
 Note that `sorted` will sort by the first elements of all the tuples, then by the second, and so forth:
 
-```
+````
 >>> genes = [('Indy', 4), ('Boss', 2), ('Lush', 10), ('Boss', 4), ('Lush', 1)]
 >>> sorted(genes)
 [('Boss', 2), ('Boss', 4), ('Indy', 4), ('Lush', 1), ('Lush', 10)]
-```
+````
 
 If we want to sort the bases instead by their frequency, we have to use some trickery like a list comprehension to first reverse the tuples:
 
-```
+````
 >>> [(x[1], x[0]) for x in c.items()]
 [(6, 'A'), (2, 'C'), (2, 'T'), (4, 'G')]
 >>> sorted([(x[1], x[0]) for x in c.items()])
 [(2, 'C'), (2, 'T'), (4, 'G'), (6, 'A')]
-```
+````
 
 But what is particularly nifty about Counters is that they have built-in methods to help you with such actions:
 
-```
+````
 >>> c.most_common(2)
 [('A', 6), ('G', 4)]
 >>> c.most_common()
 [('A', 6), ('G', 4), ('C', 2), ('T', 2)]
-```
+````
 
 You should read the documentation to learn more ([https://docs.python.org/3/library/collections.html\](https://docs.python.org/3/library/collections.html%29).
 
@@ -688,7 +688,7 @@ You should read the documentation to learn more ([https://docs.python.org/3/libr
 
 Finally, I'll show you a version of the character counter that takes some other arguments to control how to show the results:
 
-```
+````
 $ cat -n char_count2.py
      1	#!/usr/bin/env python3
      2	"""
@@ -791,13 +791,13 @@ $ cat -n char_count2.py
     99	# --------------------------------------------------
    100	if __name__ == '__main__':
    101	    main()
-```
+````
 
 # Acronym Finder
 
 Similar to the `gashlycrumb.py` program that looked up a line of text for a given letter, we could randomly create meanings for a given acronym:
 
-```
+````
 $ ./bacryonym.py NSF
 NSF =
  - Nonrepresentationalism Staunchness Forever
@@ -812,11 +812,11 @@ FBI =
  - Flusterate Bakuninism Isopilocarpine
  - Freshen Bondsman Indigene
  - Fluotantalate Bornyl Interligamentous
-```
+````
 
 That is just using the standard dictionary to look up words, so we could make it more interesting by using the works of Shakespeare:
 
-```
+````
 $ ./bacryonym.py -w shakespeare.txt FBI
 FBI =
  - Furthermore Burnet Instigation
@@ -824,11 +824,11 @@ FBI =
  - Flower Beart Immanity
  - Fearfully Borne Itmy
  - Fooleries Blunts Intoxicates
-```
+````
 
 Here is the Python for that:
 
-```
+````
 $ cat -n bacronym.py
      1	#!/usr/bin/env python3
      2	"""Make guesses about acronyms"""
@@ -928,13 +928,13 @@ $ cat -n bacronym.py
     96	# --------------------------------------------------
     97	if __name__ == '__main__':
     98	    main()
-```
+````
 
 # Sequence Similarity
 
 We can use dictionaries to count how many words are in common between any two texts.  Since I'm only trying to see if a word is present, I can use a `set` which is like a `dict` where the values are just "1."  Here is the code:
 
-```
+````
 $ cat -n common_words.py
      1    #!/usr/bin/env python3
      2    """Count words in common between two files"""
@@ -986,11 +986,11 @@ $ cat -n common_words.py
     48    # --------------------------------------------------
     49    if __name__ == '__main__':
     50        main()
-```
+````
 
 Let's see it in action using a common nursery rhyme and a poem by William Blake (1757-1827):
 
-```
+````
 $ cat mary-had-a-little-lamb.txt
 Mary had a little lamb,
 It's fleece was white as snow,
@@ -1023,11 +1023,11 @@ There are 4 words in common between "mary-had-a-little-lamb.txt" and "little-lam
   2: lamb
   3: little
   4: the
-```
+````
 
 Well, that's pretty uninformative.  Sure "a" and "the" are shared, but we don't much care about those.  And while "little" and "lamb" are present, it hardly tells us about how prevalent they are.  In the nursery rhyme, they occur a total of 3 times, but they make up a significant portion of the Blake poem.  Let's try to work in word frequency:
 
-```
+````
 $ cat -n common_words2.py
      1    #!/usr/bin/env python3
      2    """Count words/frequencies in two files"""
@@ -1097,11 +1097,11 @@ $ cat -n common_words2.py
     66    # --------------------------------------------------
     67    if __name__ == '__main__':
     68        main()
-```
+````
 
 And here it is in action:
 
-```
+````
 $ ./common_words2.py mary-had-a-little-lamb.txt little-lamb.txt
 There are 4 words in common between "mary-had-a-little-lamb.txt" (22) and "little-lamb.txt" (113).
   # word                     1     2
@@ -1113,13 +1113,13 @@ There are 4 words in common between "mary-had-a-little-lamb.txt" (22) and "littl
     -----                   --    --
     total                    5    23
     pct                     22    20
-```
+````
 
 It is interesting (to me, at least) that the shared content actually works out to about the same proportion no matter the direction.  Imagine comparing a large genome to a smaller one -- what is a significant portion of shared sequence space from the smaller genome might be only a small fraction of the larger one.  Here we see that just those few words make up an equivalent proportion of both texts because of how repeated the words are in the Blake poem.
 
 This is all pretty good as long as the words are spelled the same, but take the two texts here that show variations between British and American English:
 
-```
+````
 $ cat british.txt
 I went to the theatre last night with my neighbour and had a litre of
 beer, the colour and flavour of which put us into such a good humour
@@ -1174,21 +1174,21 @@ There are 34 words in common between "british.txt" (63) and "american.txt" (63).
     -----                   --    --
     total                   48    48
     pct                     76    76
-```
+````
 
 Obviously we will miss all those words because the are not spelled exactly the same.  Neither are genomes.  So we need a way to decide if two words or sequences are similar enough.  One way is through sequence alignment:
 
-```
+````
 l a b o u r      c a t a l o g u e      p r e t e n c e     l i t r e
 | | | |   |      | | | | | | |          | | | | | |   |     | | | 
 l a b o   r      c a t a l o g          p r e t e n s e     l i t e r
-```
+````
 
 Try writing a sequence alignment program (no, really!), and you'll find it's really quite difficult.  Decades of research have gone into Smith-Waterman and BLAST and BLAT and LAST and more.  Alignment works very well, but it's computationally expensive.  We need a faster approximation of similarity.  Enter k-mers!
 
 A k-mer is a `k` length of "mers" or contiguous sequence (think "polymers").  Here are the 3/4-mers in my last name:
 
-```
+````
 $ ./kmer_tiler.py youens
 There are 4 3-mers in "youens."
 youens
@@ -1202,11 +1202,11 @@ youens
 youe
  ouen
   uens
-```
+````
 
 If instead looking for shared "words" we search for k-mers, we will find very different results, and the length of the k-mer matters.  For instance, the first 3-mer in my name, "you" can be found 81 times in my local dictionary, but the 4-mer "youe" not at all.  The longer the k-mer, the greater the specificity.  Let's try our English variations with a k-mer counter:
 
-```
+````
 $ ./common_kmers.py british.txt american.txt
 There are 112 kmers in common between "british.txt" (127) and "american.txt" (127).
   # kmer                     1     2
@@ -1219,7 +1219,7 @@ There are 112 kmers in common between "british.txt" (127) and "american.txt" (12
     -----                   --    --
     total                  142   133
     pct                     86    86
-```
+````
 
 Our word counting program thought these two texts only 76% similar, but our kmer counter thinks they are 86% similar.
 

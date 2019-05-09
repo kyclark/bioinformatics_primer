@@ -99,7 +99,7 @@ Once you are in "/usr/local/bin", what would `pwd` show after you did `cd ../..`
 
 Most Unix commands use STDIN ("standard in"), STDOUT ("standard out"), and STDERR ("standard error"). For instance, the `env` program will show you key/value pairs that describe. your environment -- things like your user name (`$USER`), your shell (`$SHELL`), your current working directory (`$PWD`). It can be quite a long list, so you could send the output (STDOUT) of `env` to `head` to see just the first few lines:
 
-```
+````
 $ env | head
 TERM_PROGRAM=iTerm.app
 TERM=xterm-256color
@@ -111,7 +111,7 @@ TERM_PROGRAM_VERSION=3.2.6
 OLDPWD=/Users/kyclark/work/biosys-analytics/lectures
 TERM_SESSION_ID=w2t0p0:34E89330-9CEE-4FA6-9039-3674CBDE4655
 USER=kyclark
-```
+````
 
 If you provide a file name as an argument to `head`, it will work on that:
 
@@ -213,7 +213,7 @@ Notice that there is no error when referencing a variable that does not exist or
 
 If you launch a program that won't stop, you can use CTRL-C (where "CTRL" is the "control" key sometime written "^C" or "^-C") to send an "interrupt" signal to the program. If it is well-behaved, it should stop, but it may not. For example, perhaps I've tried to use a text editor to open a 10G FASTA file and now my terminal is unresponsive because the editor is using all available memory. I could open another terminal on the machine and run `ps -fu $USER` to find all the programs I am running:
 
-```
+````
 $ ps -fu $USER
 UID        PID  PPID  C STIME TTY          TIME CMD
 kyclark  31718 31692  0 12:16 ?        00:00:00 sshd: kyclark@pts/75
@@ -222,7 +222,7 @@ kyclark  33265 33247  0 12:16 ?        00:00:00 sshd: kyclark@pts/86
 kyclark  33277 33265  1 12:16 pts/86   00:00:00 -bash
 kyclark  33792 33277  9 12:17 pts/86   00:00:00 vim maize_genome.fasta
 kyclark  33806 31723  0 12:17 pts/75   00:00:00 ps -fu kyclark
-```
+````
 
 The PID is the "process ID" and the PPID is the "parent process ID."  In the above table, let's assume I want to kill `vim`, so I type `kill 33792`. If in a reasonable amount of time (a minute or so) that doesn't work, I could use `kill -9` (but it's considered a bit uncouth).
 
@@ -230,13 +230,13 @@ CTRL-Z is used to put a process into the background. This could be handy if, say
 
 Generally if you want a program to run in the background, you would launch it from the command line with an ampersand ("&") at the end:
 
-```
+````
 $ my-background-prog.sh &
-```
+````
 
 Lastly, most Unix programs interpret CTRL-D as the end-of-input signal. You can use this to send the "exit" command to most any interactive program, even your shell. Here's a way to enter some text into a file directly from the command line without using a text editor. After typing the last line (i.e., type "chickens.&lt;Enter&gt;"), type CTRL-D:
 
-```
+````
 $ cat > wheelbarrow
 so much depends
 upon
@@ -262,7 +262,7 @@ water
 
 beside the white
 chickens.
-```
+````
 
 # Handy command line shortcuts
 
@@ -307,7 +307,7 @@ $ echo $PATH | gsed "s/:/\n/g"
 
 And here is my `$PATH` on the HPC at the University of Ariziona:
 
-```
+````
 [hpc:login3@~]$ echo $PATH | sed "s/:/\n/g"
 /rsgrps/bh_class/bin
 /home/u20/kyclark/.cargo/bin
@@ -328,7 +328,7 @@ And here is my `$PATH` on the HPC at the University of Ariziona:
 /sbin
 /usr/sbin
 /cm/local/apps/environment-modules/4.0.0/bin
-```
+````
 
 I've used "sed" (or "gsed" which is GNU sed) to add a newline after each colon so you can more easily see that the directories are separated by colons. If you use the `which` command to see where a program lives, you can see that it is found in a directory that is included in your `$PATH`:
 
@@ -347,15 +347,15 @@ In this repository I have included a `bin` directory that has some useful Python
 2. Copy the contents of the `bin` directory to one of the other directories that are already in your `$PATH`, e.g., `cp $HOME/ppds/bin/* /usr/local/bin`, but that might require root privilege that you don't have.
 3. Add `$HOME/ppds/bin` to your `$PATH`
 
-```
+````
 export PATH="$HOME/ppds/bin:$PATH"
-```
+````
 
 You just told your shell (bash) to set the `$PATH` variable to `$HOME/ppds/bin` plus whatever is was before. Since we want this to happen each time we log in, so we can add this command to `$HOME/.bashrc`:
 
-```
+````
 echo "export PATH=$HOME/ppds/bin:$PATH" >> ~/.bashrc
-```
+````
 
 As you find or create useful programs that you would like to have available globally on your system (i.e., not just in the current working directory), you can create a location like `$HOME/bin` (or my preferred `$HOME/.local/bin`) and add this to your `$PATH` as well. You can add as many directories as you like (within reason).
 
@@ -369,27 +369,27 @@ After a while, you may wish to collect your dotfiles into a Github repo, e.g., h
 
 Sometimes you'll find you're using a particular command quite often and want to create a shortcut. You can assign any command to a single "alias" like so:
 
-```
+````
 alias cx='chmod +x'
 alias up2='cd ../../'
 alias up3='cd ../../../'
-```
+````
 
 If you execute this on the command line, the alias will be saved until you log out. Adding these lines to your `.bashrc` will make it available every time you log in. When you make a change and want the shell to bring those into the current environment, you need to `source` the file. The command `.` is an alias for `source`:
 
-```
+````
 $ source ~/.bashrc
 $ . ~/.bashrc
-```
+````
 
 # Permissions
 
 When you execute `ls -l`, you'll see the "long" listing of the contents of a directory similar to this:
 
-```
+````
 -rwxr-xr-x   1 kyclark  staff     174 Aug  9 20:21 abs.py*
 drwxr-xr-x  14 kyclark  staff     476 Aug  3 12:14 anaconda3/
-```
+````
 
 The first column of data contains a wealth of information represent in 10 bits. The first bit is:
 
@@ -401,45 +401,45 @@ The other nine bits are broken into sets of three bits that represent the permis
 
 When you create a file, the normal default is that it is not executable. You must specifically tell Unix to change the mode of the file using the "chmod" command. Often it's enough to say:
 
-```
+````
 $ chmod +x myprog.sh
-```
+````
 
 To turn on the execute bits for everyone, but it's possible to have much finer control of the permissions. If you only want user and group to have execute, then do:
 
-```
+````
 $ chmod ug+x myprog.sh
-```
+````
 
 Removing is done with a "-," so any combination of `[ugo][+-][rwx]` will usually get you what you want.
 
 Sometimes you may see instructions to `chmod 775` a file. This is using octal notation where the three bits "rwx" correspond to the digits "421," so the first "7" is "4+2+1" which equals "rwx" whereas the "5" = "4+1" so only "rw":
 
-```
+````
  user   group   other
 r w x   r w x   r w x
 4 2 1 | 4 2 1 | 4 2 1
 + + +   + + +   + - + 
  = 7     = 7     = 5
-```
+````
 
 Therefore "chmod 775" is the same as:
 
-```
+````
 $ chmod -rwx myfile
 $ chmod ug+rwx myfile
 $ chmod o+rw myfile
-```
+````
 
 When you create ssh keys or config files, you are instructed to `chmod 600`:
 
-```
+````
  user   group   other
 r w x   r w x   r w x
 4 2 1 | 4 2 1 | 4 2 1
 + + -   - - -   - - - 
  = 6     = 0     = 0
-```
+````
 
 Which means that only you can read or write the file, and no one else can do anything with it. So you can see that it can be much faster to use the octal notation.
 
@@ -480,11 +480,11 @@ Installing from source usually means downloading a "tarball" ("tar" = "tape arch
 
 The basic steps for installing into your `$HOME` are usually:
 
-```
+````
 $ tar xvf package.tgz
 $ ./configure --prefix=$HOME/.local
 $ make && make install
-```
+````
 
 When I'm in an environment with a directory I can share with my team (like the UA HPC), I'll configure the package to install into that shared space so that others can use the program. When I'm on a system like "stampede" where I cannot share with others, I'll usually install into my `$HOME/.local` or some sort of "work" directory.
 

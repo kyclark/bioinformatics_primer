@@ -10,7 +10,7 @@ Bash is the worst shell scripting language except for all the others. For many o
 
 All programming language have a grammar where "statements" (like "sentences") are built up from other terms. Some languages like Python and Haskell use whitespace to figure out the end of a "statement," which is usually just the right side of the window. C-like languages such as bash and Perl define the end of a statement with a colon `;`. Bash is interesting because it uses both. If you hit &lt;Enter&gt; or type a newline in your code, Bash will execute that statement. If you want to put several commands on one line, you can separate each with a semicolon. If you want to stretch a command over more than one line, you can use a backslash `\` to continue the line:
 
-```
+````
 $ echo Hi
 Hi
 $ echo Hello
@@ -21,13 +21,13 @@ Hello
 $ echo \
 > Hi
 Hi
-```
+````
 
 # Comments
 
 Every language has a way to indicate text in the source code that should not be executed by the program. Many Unix/c-style languages use the `#` (hash) sign to indicate that any text to the right should be ignored by the language, but some languages use other characters or character combinations like `//` in Javascript, Java, and Rust. Programmers may use comments to explain what some particularly bit of code is doing, or they may use the characters to temporarily disable some section of code. Here is an example of what you might see:
 
-```
+````
 # cf. https://en.wikipedia.org/wiki/Factorial
 sub fac(n) { 
   # first check terminal condition
@@ -39,7 +39,7 @@ sub fac(n) {
     n * fac(n - 1) # the number times one less the number
   }
 }
-```
+````
 
 It's worth investing time in an editor that can easily comment/uncomment whole sections of code. For instance, in vim, I have a function that will add or removed the appropriate comment character(s) (depending on the filetype) from the beginning of the selected section. If your editor can't do that (e.g., nano), then I suggest you find something more powerful.
 
@@ -49,19 +49,19 @@ Scripting languages (sh, bash, Perl, Python, Ruby, etc.) are generally distingui
 
 So, basically a "script" is a plain text file that is often executable by virtue of having the executable bit(s) turned on (cf. "Permissions"). It does not have to be executable, however. It's acceptable to put some commands in a file and simply tell the appropriate program to interpret the file:
 
-```
+````
 $ echo "echo Hello, World" > hello.sh
 $ sh hello.sh
 Hello, World
-```
+````
 
 But it looks cooler to do this:
 
-```
+````
 $ chmod +x hello.sh
 $ ./hello.sh
 Hello, World
-```
+````
 
 But what's going on here?
 
@@ -73,20 +73,20 @@ But what's going on here?
 
 We put some Python code in a file and then asked our shell (which is bash) to interpret it. That didn't work. If we ask Python to run it, everything is fine:
 
-```
+````
 $ python3 hello.py
 Hello, World
-```
+````
 
 So we just need to let the shell know that this is Python 3 code, and that is what the "shebang" (see "Pronunciations") line is for. It looks like a comment, but it's special line that the shell uses to interpret the script. I'll use an editor to add a shebang to the "hello.py" script, then I'll `cat` the file so you can see what it looks like.
 
-```
+````
 $ cat hello.py
 #!/usr/bin/env python3
 print("Hello, World")
 $ ./hello.py
 Hello, World
-```
+````
 
 Often the shebang line will indicate the absolute path to a program like "/bin/bash" or "/usr/local/bin/gawk," but here I used an absolute path not to Python but to the "env" program which I then passed "python3" as the argument. Why did I do that?  To make this script "portable" (for certain values of "portable," cf. "It's easier to port a shell than a shell script." – Larry Wall), I prefer to use the "python3" that is found by the environment as I will usually put my preferred Python first in my `$PATH`.
 
@@ -94,7 +94,7 @@ Often the shebang line will indicate the absolute path to a program like "/bin/b
 
 Let's make our script say "Hello" to some people:
 
-```
+````
 $ cat -n hello2.sh
      1    #!/usr/bin/env bash
      2
@@ -105,7 +105,7 @@ $ cat -n hello2.sh
 $ ./hello2.sh
 Hello, Newman
 Hello, Jerry
-```
+````
 
 I've created a variable called `NAME` to hold the string "Newman" and print it. Notice there is no `$` when assigning to the variable, only when you use it.  The value of `NAME` can be changed at any time. You can print it out like on line 4 as it's own argument to `echo` or inside of a string like on line 6. Notice that the version on line 4 puts a space between the arguments to `echo`.
 
@@ -113,7 +113,7 @@ Because all the variables from the environment (see `env`) are uppercase (e.g., 
 
 When assigning a variable, you can have NO SPACES around the `=` sign:
 
-```
+````
 $ NAME1="Doge"
 $ echo "Such $NAME1"
 Such Doge
@@ -121,23 +121,23 @@ $ NAME2 = "Doge"
 -bash: NAME2: command not found
 $ echo "Such $NAME2"
 Such
-```
+````
 
 ## Sidebar: Catching Common Errors (set -u)
 
 Bash is an easy language to write incorrectly. One step you can take to ensure you don't misspell variables is to add `set -u` at the top of your script. E.g., if you type `echo $HOEM` on the command line, you'll get no output or warning that you misspelled the `$HOME` variable unless you `set -u`:
 
-```
+````
 $ echo $HOEM
 
 $ set -u
 $ echo $HOEM
 -bash: HOEM: unbound variable
-```
+````
 
 This command tells bash to complain when you use a variable that was never initialized to some value. This is like putting on your helmet. It's not a requirement (depending on which state you live in), but you absolutely should do this because there might come a day when you misspell a variable. Note that this will not save you from as error like this:
 
-```
+````
 $ cat -n set-u-bug1.sh
      1    #!/bin/bash
      2
@@ -152,13 +152,13 @@ $ ./set-u-bug1.sh
 OK
 $ ./set-u-bug1.sh foo
 ./set-u-bug1.sh: line 6: THIS_IS_A_BUG: unbound variable
-```
+````
 
 You can see that the first execution of the script ran just fine. There is a bug on line 6, but bash didn't catch it because that line did not execute. On the second run, the error occurred, and the script blew up. (FWIW, this is a problem in Python, too.)
 
 Here's another pernicious error:
 
-```
+````
 $ cat -n set-u-bug2.sh
      1    #!/bin/bash
      2
@@ -174,7 +174,7 @@ $ ./set-u-bug2.sh
 Hi
 $ ./set-u-bug2.sh Hello
 Hi
-```
+````
 
 We were foolishly hoping that `set -u` would prevent us from misspelling the `$GREETING`, but at line 7 we simple created a new variable called `$GRETING`. Perhaps you were hoping for more help from your language?  This is why we try to limit how much bash we write.
 
@@ -428,7 +428,7 @@ done < "$FILES"
 
 Often we want to do some set of actions for all the files in a directory or all the identifiers in a file. You can use a `for` loop to iterate over the values in some command that returns a list of results:
 
-```
+````
 $ for FILE in *.sh; do echo "FILE = $FILE"; done
 FILE = args.sh
 FILE = args2.sh
@@ -446,11 +446,11 @@ FILE = positional2.sh
 FILE = positional3.sh
 FILE = set-u-bug1.sh
 FILE = set-u-bug2.sh
-```
+````
 
 Here it is in a script:
 
-```
+````
 $ cat -n for.sh
      1    #!/bin/bash
      2
@@ -468,11 +468,11 @@ $ cat -n for.sh
     14        let i++
     15        printf "%3d: %s\n" $i "$FILE"
     16    done
-```
+````
 
 On line 5, I default `DIR` to the current working directory which I can find with the environmental variable `$PWD` (print working directory). I check on line 7 that the argument is actually a directory with the `-d` test (`man test`). The rest should look familiar. Here it is in action:
 
-```
+````
 $ ./for.sh | head
   1: /Users/kyclark/work/metagenomics-book/bash/args.sh
   2: /Users/kyclark/work/metagenomics-book/bash/args2.sh
@@ -495,11 +495,11 @@ $ ./for.sh ../problems | head
   8: ../problems/hello
   9: ../problems/proteins
  10: ../problems/tac
-```
+````
 
 You will see many examples of using `for` to read from a file like so:
 
-```
+````
 $ cat -n for-read-file.sh
      1    #!/usr/bin/env bash
      2
@@ -515,11 +515,11 @@ $ ./for-read-file.sh srr.txt
 LINE "SRR3115965"
 LINE "SRR516222"
 LINE "SRR919365"
-```
+````
 
 But that can break badly when the file contains more than one "word" per line (as defined by the `$IFS` \[input field separator\]):
 
-```
+````
 $ column -t pov-meta.tab
 name              lat_lon.ll
 GD.Spr.C.8m.fa    -17.92522,146.14295
@@ -552,13 +552,13 @@ LINE "L.Spr.I.10m.fa"
 LINE "48.96917,-130.67033"
 LINE "L.Spr.I.2000m.fa"
 LINE "48.96917,-130.67033"
-```
+````
 
 # While Loops
 
 The proper way to read a file line-by-line is with `while`:
 
-```
+````
 $ cat -n while.sh
      1    #!/usr/bin/env bash
      2
@@ -580,11 +580,11 @@ LINE "L.Spr.C.500m.fa    48.6495,-126.66434"
 LINE "L.Spr.I.1000m.fa    48.96917,-130.67033"
 LINE "L.Spr.I.10m.fa    48.96917,-130.67033"
 LINE "L.Spr.I.2000m.fa    48.96917,-130.67033"
-```
+````
 
 Another advantage is that `while` can break the line into fields:
 
-```
+````
 $ cat -n while2.sh
      1    #!/usr/bin/env bash
      2
@@ -602,13 +602,13 @@ L.Spr.C.500m.fa is located at "48.6495,-126.66434"
 L.Spr.I.1000m.fa is located at "48.96917,-130.67033"
 L.Spr.I.10m.fa is located at "48.96917,-130.67033"
 L.Spr.I.2000m.fa is located at "48.96917,-130.67033"
-```
+````
 
 ## Sidebar: Saving Function Results in Files
 
 Often I want to iterate over the results of some calculation. Here is an example of saving the results of an operation (`find`) into a temporary file:
 
-```
+````
 $ cat -n count-fa.sh
      1    #!/usr/bin/env bash
      2
@@ -643,7 +643,7 @@ $ ./count-fa.sh ../problems
         23 anthrax.fa
          9 burk.fa
 Done, found 32 sequences in 2 files.
-```
+````
 
 Line 11 uses the `mktemp` function to give us the name of a temporary file, then I `find` all the files ending in ".fa" or ".fasta" and put that into the temporary file. I could them to make sure I found something. Then I read from the tempfile and use the `FILE` name to count the number of times I see a greater-than sign at the beginning of a line.
 
@@ -664,7 +664,7 @@ First we'll cover the command-line arguments which are available through a few v
 
 A la:
 
-```
+````
 $ cat -n args.sh
      1    #!/usr/bin/env bash
      2
@@ -691,11 +691,11 @@ String of args : "foo bar"
 Name of program: "./args.sh"
 First arg      : "foo"
 Second arg     : "bar"
-```
+````
 
 If you would like to iterate over all the arguments, you can use `$@` like so:
 
-```
+````
 $ cat -n args2.sh
      1    #!/usr/bin/env bash
      2
@@ -716,7 +716,7 @@ $ ./args2.sh foo bar "baz quux"
 1: foo
 2: bar
 3: baz quux
-```
+````
 
 Here I'm throwing in a conditional at line 3 to check if the script has any arguments. If the number of arguments (`$#`) is less than (`-lt`) 1, then let the user know there is nothing to show; otherwise (`else`) do the next block of code. The `for` loop on line 7 works by splitting the argument string (`$@`) on spaces just like the command line does. Both `for` and `while` loops require the `do/done` pair to delineate the block of code (some languages use `{}`, Haskell and Python use only indentation). Along those lines, line 11 is the close of the `if` -- "if" spell backwards; the close of a `case` statement in bash is `esac`.
 
@@ -726,7 +726,7 @@ The other bit of magic I threw in was a counter variable (which I always use low
 
 Note that indentation doesn't matter as the program below works, but, honestly, which one is easier for you to read?
 
-```
+````
 $ cat -n args3.sh
      1    #!/usr/bin/env bash
      2
@@ -742,33 +742,33 @@ $ cat -n args3.sh
 $ ./args3.sh foo bar
 1: foo
 2: bar
-```
+````
 
 ## Our First Argument
 
 AT LAST, let's return to our "hello" script!
 
-```
+````
 $ cat -n hello3.sh
      1    #!/usr/bin/env bash
      2
      3    echo "Hello, $1!"
 $ ./hello3.sh Captain
 Hello, Captain!
-```
+````
 
 This should make perfect sense now. We are simply saying "hello" to the first argument, but what happens if we provide no arguments?
 
-```
+````
 $ ./hello3.sh
 Hello, !
-```
+````
 
 ## Checking the Number of Arguments
 
 Well, that looks bad. We should check that the script has the proper number of arguments which is 1:
 
-```
+````
 $ cat -n hello4.sh
      1    #!/usr/bin/env bash
      2
@@ -784,13 +784,13 @@ $ ./hello4.sh Captain
 Hello, Captain!
 $ ./hello4.sh Captain Picard
 Usage: hello4.sh NAME
-```
+````
 
 Line 3 checks if the number of arguments is not equal (`-ne`) to 1 and prints a help message to indicate proper "usage."  Importantly, it also will `exit` the program with a value which is not zero to indicate that there was an error. (NB: An exit value of "0" indicates 0 errors.)  Line 4 uses `printf` rather than `echo` so I can do some fancy substitution so that the results of calling the `basename` function on the `$0` (name of the program) is inserted at the location of the `%s` (a string value, cf. man pages for "printf" and "basename").
 
 Here is an alternate way to write this script:
 
-```
+````
 $ cat -n hello5.sh
      1    #!/usr/bin/env bash
      2
@@ -801,7 +801,7 @@ $ cat -n hello5.sh
      7        printf "Usage: %s NAME\n" "$(basename "$0")"
      8        exit 1
      9    fi
-```
+````
 
 Here I check on line 3 if there is just one argument, and the `else` is devoted to handling the error; however, I prefer to check for all possible errors at the beginning and `exit` the program quickly. This also has the effect of keeping my code as far left on the page as possible.
 
@@ -832,7 +832,7 @@ Here is a script that shows:
 4. Showing that `$()` can be interpolated **inside a string**
 5. Using `$()` to call `basename` as an argument to `printf`
 
-```
+````
 $ cat -n functions.sh
      1    #!/usr/bin/env bash
      2
@@ -854,13 +854,13 @@ $ ./functions.sh
 3: BASENAME: functions.sh
 4: BASENAME: functions.sh
 5: BASENAME: functions.sh
-```
+````
 
 ## Providing Default Argument Values
 
 Here is how you can provide a default value for an argument with `:-`:
 
-```
+````
 $ cat -n hello6.sh
      1    #!/usr/bin/env bash
      2
@@ -869,13 +869,13 @@ $ ./hello6.sh
 Hello, Stranger!
 $ ./hello6.sh Govnuh
 Hello, Govnuh!
-```
+````
 
 ## Arguments From The Environment
 
 You can also use look in the environment for argument values. For instance, we could accept the `NAME` as either the first argument to the script (`$1`) or the `$USER` from the environment:
 
-```
+````
 $ cat -n hello7.sh
      1    #!/usr/bin/env bash
      2
@@ -886,61 +886,61 @@ $ ./hello7.sh
 Hello, kyclark
 $ ./hello7.sh Barbara
 Hello, Barbara
-```
+````
 
 What's interesting is that you can temporarily over-ride an environmental variable like so:
 
-```
+````
 $ USER=Bart ./hello7.sh
 Hello, Bart
 $ ./hello7.sh
 Hello, kyclark
-```
+````
 
 ## Exporting Values to the Environment
 
 Notice that I can set `USER` for the first run to "Bart," but the value returns to "kyclark" on the next run. I can permanently set a value in the environment by using the `export` command. Here is a version of the script that looks for an environmental variable called `WHOM` (please do override your `$USER` name in the environment as things will break):
 
-```
+````
 $ cat -n hello8.sh
      1    #!/usr/bin/env bash
      2
      3    echo "Hello, ${WHOM:-Marie}"
 $ ./hello8.sh
 Hello, Marie
-```
+````
 
 As before I can set it temporarily:
 
-```
+````
 $ WHOM=Doris ./hello8.sh
 Hello, Doris
 $ ./hello8.sh
 Hello, Marie
-```
+````
 
 Now I will `export WHOM` so that it persists:
 
-```
+````
 $ WHOM=Doris
 $ export WHOM
 $ ./hello8.sh
 Hello, Doris
 $ ./hello8.sh
 Hello, Doris
-```
+````
 
 To remove `WHOM` from the environment, use `unset`:
 
-```
+````
 $ unset WHOM
 $ ./hello8.sh
 Hello, Marie
-```
+````
 
 Some programs rely heavily on environmental variables (e.g., Centrifuge, TACC LAUNCHER) for arguments. Here is a short script to illustrate how you would use such a program:
 
-```
+````
 $ cat -n hello9.sh
      1    #!/usr/bin/env bash
      2
@@ -953,13 +953,13 @@ $ ./hello9.sh
 Hello, Who's on first
 Hello, What's on second
 Hello, I don't know's on third
-```
+````
 
 ## Required and Optional Arguments
 
 Now we're going to accept two arguments, "GREETING" and "NAME" while providing defaults for both:
 
-```
+````
 $ cat -n positional.sh
      1    #!/usr/bin/env bash
      2
@@ -977,13 +977,13 @@ $ ./positional.sh Howdy Padnuh
 Howdy, Padnuh
 $ ./positional.sh "" Pahnuh
 Hello, Pahnuh
-```
+````
 
 You notice that if I want to use the default argument for the greeting, I have to pass an empty string `""`.
 
 What if I want to require at least one argument?
 
-```
+````
 $ cat -n positional2.sh
      1    #!/usr/bin/env bash
      2
@@ -1002,20 +1002,20 @@ $ ./positional2.sh "Good Day"
 Good Day, Stranger
 $ ./positional2.sh "Good Day" "Kind Sir"
 Good Day, Kind Sir
-```
+````
 
 It's also important to note the subtle hints given to the user in the "Usage" statement. `[NAME]` has square brackets to indicate that it is an option, but `GREETING` does not to say it is required. As noted before I wanted to use the GREETING "Good Day," so I had to put it in quotes so that the shell would not interpret them as two arguments. Same with the NAME "Kind Sir."
 
-```
+````
 $ ./positional2.sh Good Day Kind Sir
 Good, Day
-```
+````
 
 ## Not Too Few, Not Too Many (Goldilocks)
 
 Hmm, maybe we should detect that the script had too many arguments?
 
-```
+````
 $ cat -n positional3.sh
      1    #!/usr/bin/env bash
      2
@@ -1034,7 +1034,7 @@ $ ./positional3.sh Good Day Kind Sir
 Usage: positional3.sh GREETING [NAME]
 $ ./positional3.sh "Good Day" "Kind Sir"
 Good Day, Kind Sir
-```
+````
 
 To check for too many arguments, I added an "OR" (the double pipes `||`) and another conditional ("AND" is `&&`). I also changed line 13 to use a `printf` command to highlight the importance of quoting the arguments _inside the script_ so that bash won't get confused. Try it without those quotes and try to figure out why it's doing what it's doing. I highly recommend using the program "shellcheck" ([https://github.com/koalaman/shellcheck](https://github.com/koalaman/shellcheck)) to find mistakes like this. Also, consider using more powerful/helpful/sane languages -- but that's for another discussion.
 
@@ -1044,14 +1044,14 @@ I hope maybe by this point you're thinking that the script is getting awfully co
 
 The best thing about named arguments is that they can be provided in any order:
 
-```
+````
 $ ./named.sh -n Patch -g "Good Boy"
 Good Boy, Patch!
-```
+````
 
 Some may have values, some may be flags, and you can easily provide good defaults to make it easy for the user to provide the bare minimum information to run your program. Here is a version that has named arguments:
 
-```
+````
 $ cat -n named.sh
      1    #!/usr/bin/env ash
      2    
@@ -1105,11 +1105,11 @@ $ cat -n named.sh
     50    
     51    echo "$GREETING, $NAME$PUNCTUATION"
 
-```
+````
 
 When run without arguments or with the `-h` flag, it produces a help message. 
 
-```
+````
 $ ./named.sh
 Usage:
   named.sh -g GREETING [-e] [-n NAME]
@@ -1120,16 +1120,16 @@ Required arguments:
 Options:
  -n NAME (Stranger)
  -e Print exclamation mark (default yes)
-```
+````
 
 Our script just got much longer but also more flexible. I've written a hundred shell scripts with just this as the template, so you can, too. Go search for how `getopt` works and copy-paste this for your bash scripts, but the important thing to understand about `getopt` is that flags that take arguments have a `:` after them (`g:` == "-g something") and ones that do not, well, do not (`h` == "-h" == "please show me the help page). Both the "h" and "e" arguments are flags:
 
-```
+````
 $ ./named.sh -n Patch -g "Good Boy"
 Good Boy, Patch.
 $ ./named.sh -n Patch -g "Good Boy" -e
 Good Boy, Patch!
-```
+````
 
 I've introduced a new function called `USAGE` that prints out the "Usage" statement so that it can be called when:
 
@@ -1139,9 +1139,9 @@ I've introduced a new function called `USAGE` that prints out the "Usage" statem
 
 I initialized the NAME to "Stranger" (line 6) and then let the user know in the "Usage" what the default value will be. When checking the GREETING in line 44, I'm actually checking that the length of the value is greater than zero because it's possible to run the script like this:
 
-```
+````
 $ ./named01.sh -g ""
-```
+````
 
 Which would technically pass muster but does not actually meet our requirements.
 
@@ -1149,7 +1149,7 @@ Which would technically pass muster but does not actually meet our requirements.
 
 The last way I'll show you to get data into your program is to read a configuration file. This builds on the earlier example of using `export` to put values into the environment:
 
-```
+````
 $ cat -n config1.sh
      1    export NAME="Merry Boy"
      2    export GREETING="Good morning"
@@ -1160,11 +1160,11 @@ $ cat -n read-config.sh
      4    echo "$GREETING, $NAME!"
 $ ./read-config.sh
 Good morning, Merry Boy!
-```
+````
 
 To make this more flexible, let's pass the config file as an argument:
 
-```
+````
 $ cat -n read-config2.sh
      1    #!/usr/bin/env bash
      2
@@ -1185,13 +1185,13 @@ $ ./read-config2.sh config2.sh
 Salut, François!
 $ ./read-config2.sh foo
 Bad config "foo"
-```
+````
 
 # A Full Bag of Tricks
 
 Lastly I'm going to show you how to create some sane defaults, make missing directories, find user input, transform that input, and report back to the user. Here's a script that takes an IN\_DIR, counts the lines of all the files therein, and reports said line counts into an optional OUT\_DIR.
 
-```
+````
      1    #!/usr/bin/env bash
      2    
      3    set -u
@@ -1273,7 +1273,7 @@ Lastly I'm going to show you how to create some sane defaults, make missing dire
     79    fi
     80    
     81    echo "Finished $(date)"
-```
+````
 
 The IN_DIR argument is required (lines 46-49), and it must be a directory (lines 51-54). If the user does not supply an OUT_DIR, I will create a reasonable default using the current working directory and the name of the script plus "-out" (line 6). One thing I love about bash is that I can call functions inside of strings, so OUT_DIR is a string (it's in double quotes) of the variable $PWD, the character "/", and the result of the function call to `basename` where I'm giving the optional second argument ".sh" that I want removed from the first argument, and then the string "-out".
 

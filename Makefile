@@ -3,3 +3,6 @@ pdf:
 
 book:
 	./bin/compile.sh
+
+chapters:
+	./bin/mk-chapters.sh

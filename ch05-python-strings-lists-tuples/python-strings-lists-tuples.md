@@ -148,19 +148,13 @@ $ cat -n word_is_palindrome.py
     15    print('"{}" is{} a palindrome.'.format(word, '' if word.lower() == rev.lower() else ' NOT'))
 ````
 
-As we discussed earlier, `sys.argv` returns exactly what the operating system thinks of as "the program" it's running, namely that the program name is in the first (zeroth) position, and anything else you type on the command line follows.  If you run this as `./word_is_palindrome.py foo` then `sys.argv` looks like `['./word_is_palindrome.py', 'foo']`.  While discussing this with a student, I realized the confusion over the program name being in the `[0]` position, so rather than doing:
-
-````
-args = sys.argv
-````
-
-I think it makes more sense to have you do:
+As we discussed earlier, `sys.argv` returns exactly what the operating system thinks of as "the program" it's running, namely that the program name is in the first (zeroth) position, and anything else you type on the command line follows.  If you run this as `./word_is_palindrome.py foo` then `sys.argv` looks like `['./word_is_palindrome.py', 'foo']`.  Because the program name is in the `[0]` position, it makes more sense to get the arguments for the program like this (skipping over the 0th element):
 
 ````
 args = sys.argv[1:]
 ````
 
-Then you really are only dealing with the arguments to the script, and you can say more logical things like:
+You can say more logical things like:
 
 ````
 if len(args) == 0:
@@ -179,7 +173,7 @@ Traceback (most recent call last):
 IndexError: string index out of range
 ````
 
-Python will not, however, blow up if you take a slice of an array starting or ending at non-existent positions:
+Python will **not** blow up, however, if you take a slice of an array starting or ending at non-existent positions:
 
 ````
 >>> 'foo'[1:10]
@@ -226,7 +220,7 @@ Lines 19-20 read each `line` and then lowercase and `split` (on spaces) into eac
 for word in open(file).read().lower().split():
 ````
 
-This will call `read` on the opened file handle to bring the entire file contents into memory, lowercase, and `split` into words.  The first way is probably more efficient with memory, but you will likely see files being read.  Another common idiom to read all the lines of a file (and remove the newlines!) is:
+This will call `read` on the opened file handle to bring the entire file contents into memory, lowercase, and `split` into words.  The first way is probably more efficient with memory, but you will likely see files being read in this way.  Another common idiom to read all the lines of a file while removing the newlines is:
 
 ````
 all_lines = open(file).read().splitlines()

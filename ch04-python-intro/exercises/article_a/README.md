@@ -15,7 +15,7 @@ an oof
 
 # Test Suite
 
-Either run `make test` (if you have `make`) or `pytest -v test.py`. A passing test suite looks like this:
+A passing test suite looks like this:
 
 ````
 $ make test

@@ -1,6 +1,6 @@
-.PHONY: doc test
+.PHONY: pdf test
 
-doc:
+pdf:
 	pandoc README.md -o README.pdf
 
 test:

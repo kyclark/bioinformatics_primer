@@ -1,6 +1,6 @@
-# Python Graduate: Grid
+# Grid
 
-Write a Python program called `grid.py` that will create a square grid from the argument given on the command line. (I suggest but do not require you use `new_py.py` to start the program.)
+Write a Python program called `grid.py` that will create a square grid from the argument given on the command line. 
 
 * The program will expect one positional argument; if the number of arguments is not exactly one, print a "usage" statement and exit *with an error code*.
 * The test suite will only provide integer values, so you can assume it is safe to use `int` to convert the input from a string to an integer.
@@ -8,7 +8,7 @@ Write a Python program called `grid.py` that will create a square grid from the 
 * You will square the given number to create a grid (so think of the number as how many rows and columns).
 * Your grids will look like the below. 
 
-Sample behavior:
+# Expected Behavior
 
 ````
 $ ./grid.py
@@ -43,7 +43,7 @@ $ ./grid.py 8
 
 A passing test suite looks like this:
 
-```
+````
 $ make test
 python3 -m pytest -v test.py
 ============================= test session starts ==============================
@@ -59,4 +59,4 @@ test.py::test_bad_input PASSED                                           [ 75%]
 test.py::test_grid PASSED                                                [100%]
 
 =========================== 4 passed in 0.29 seconds ===========================
-```
+````

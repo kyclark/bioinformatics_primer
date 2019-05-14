@@ -2,7 +2,7 @@
 """
 Author : Ken Youens-Clark <kyclark@gmail.com>
 Date   : 2019-01-30
-Purpose: Rock the Casbah
+Purpose: Create an NxN grid
 """
 
 import os
@@ -11,6 +11,7 @@ import sys
 
 # --------------------------------------------------
 def main():
+    """main"""
     args = sys.argv[1:]
 
     if len(args) != 1:
@@ -19,7 +20,6 @@ def main():
 
     num = int(args[0])
 
-    #if num < 2 or num > 9:
     if not 2 <= num <= 9:
         print("NUM ({}) must be between 1 and 9".format(num))
         sys.exit(1)
@@ -31,4 +31,5 @@ def main():
 
 
 # --------------------------------------------------
-main()
+if __name__ == '__main__':
+    main()

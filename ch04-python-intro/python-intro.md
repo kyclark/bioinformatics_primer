@@ -1,8 +1,7 @@
-# Intro to Python
-
 > “Any fool can write code that a computer can understand. Good programmers write code that humans can understand.” - Martin Fowler
 
-# Hello
+
+## Hello
 
 Let's use our familiar "Hello, World!" to get started:
 
@@ -13,41 +12,127 @@ $ cat -n hello.py
      3	print('Hello, World!')
 ````
 
-The first thing to notice is a change to the "shebang" line. I'm going to use `env` to find `python3` so I won't have a hard-coded path that my user will have to change. In bash, we could use either `echo` or `printf` to print to the terminal (or a file). In Python, we have `print()` noting that we must use parentheses now to invoke functions. (One difference between versions 2 and 3 of Python was that the parens to `print` were not necessary in version 2).
+The first thing to notice is the "shebang" on line 1. I'm going to use `env` to find the first `python3` binary in the user's `$PATH`. In `bash`, we could use either `echo` or `printf` to print to the terminal (or a file). In Python, we have `print()` noting that we must use parentheses now to invoke functions. 
 
 ## Variables
 
-Let's use the REPL (Read-Evaluate-Print-Loop, pronounced "reh-pull") to play:
+It's not so interesting to just say "Hello, World!" all the time. Let's make a program that will say "hello" to some value that we pass in. This value can change each time we run the program, so it's common to call this a "variable."
+
+Let's use the REPL (Read-Evaluate-Print-Loop, pronounced "reh-pul") to play with variables. Type `python` (or `python3` or `ipython`) to get into a REPL:
 
 ````
-$ ipython
-Python 3.7.1 (default, Dec 14 2018, 19:28:38)
-Type 'copyright', 'credits' or 'license' for more information
-IPython 7.2.0 -- An enhanced Interactive Python. Type '?' for help.
-
-In [1]: name = 'Duderino'
-
-In [2]: print('Hello,', name)
+>>> name = 'Duderino'
+>>> print('Hello,', name)
 Hello, Duderino
 ````
 
-Here I'm showing that it's easy to create a variable called `name` which we assign the value "Duderino." Unlike bash, we don't have to worry about spaces around the `=`. Just as in bash, we can use it in a `print` statement, but we can't directly stick it into the string:
+Here I'm showing that we can create variable called `name` by assigning it some value like "Duderino." Unlike `bash`, we don't have to worry about spaces around the `=`. You can put any number of spaces around the equal sign, but it's most common (and readable) to put just one on each side. Notice that `print` will accept more than one argument and will put spaces between the arguments. You can tell it to use some other "separator" by indicating the `sep` keyword argument. Notice the Pythonic style is that there are *no* spaces around the `=` for keywords:
 
 ````
-In [3]: print('Hello, name')
+>>> print('Hello', name, sep=', ')
+Hello, Duderino
+````
+
+It's not easy to tell, but `print` is also putting a newline on the end. We can change that with the `end` keyword argument:
+
+````
+>>> print('Hello', name, sep=', ', end='!')
+Hello, Duderino!>>>
+````
+
+Unlike in `bash`, we cannot use a variable directly in a `print` statement or we get the equivalent of George Burns telling Gracie "Say 'Good night,' Gracie" and she says "Good night, Gracie!":
+
+````
+>>> print('Hello, name')
 Hello, name
 ````
 
-Or we could to use the `+` operator to concatenate it to the literal string "Hello, ":
+We could to use the `+` operator to concatenate it to the literal string "Hello, ":
 
 ````
-In [4]: print('Hello, ' + name)
+>>> print('Hello, ' + name)
 Hello, Duderino
 ````
 
-## Arguments
+## Types: Strings and Numbers
 
-To say "hello" to an argument passed from the command line, we need the `sys` module. A module is a package of code we can use:
+As you might expect, the "plus" operator `+` is also used to perform numeric addition:
+
+````
+>>> n = 10
+>>> n + 1
+11
+````
+
+The `name` variable above is of the type `str` (string) because we put the value in quotes (single or double, it doesn't matter). 
+
+````
+>>> name = 'The Dude'
+>>> type(name)
+<class 'str'>
+````
+
+Numbers don't have quotes. Number can be integers (`int`) or floating-point numbers (`float`) if they have a decimal somewhere or you write them in scientific notation:
+
+````
+>>> type(10)
+<class 'int'>
+>>> type(3.14)
+<class 'float'>
+>>> type(1.)
+<class 'float'>
+>>> type(2.864e-10)
+<class 'float'>
+````
+
+The "plus" operator behaves completely differently with different *types* of arguments as long as the arguments are both strings or both numbers. Things go wobbly when you mix them:
+
+````
+>>> 'Hello, ' + 'Mr. Lebowski'
+'Hello, Mr. Lebowski'
+>>> 1 + 2
+3
+>>> 1 + 'Mr. Lebowski'
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: unsupported operand type(s) for +: 'int' and 'str'
+````
+
+## Lists
+
+Before we go further, I will introduce a different variable type called a "list" as we are going to need that immediately. You create a list by putting values in `[]` (square brackets or just "brackets"):
+
+````
+>>> vals = ['foo', 'bar', 'baz']
+>>> vals
+['foo', 'bar', 'baz']
+```` 
+
+You can get the length of a list using the `len` function:
+
+````
+>>> len(vals)
+3
+````
+
+But note that, like so many other languages, Python starts counting at `0`, so the first element is in the "zeroth" position. The value at position `1` is actually the *second* value.
+
+````
+>>> vals[0]
+'foo'
+>>> vals[1]
+'bar'
+````
+
+We'll talk much more about lists in the next chapter. I needed to tell you that so I could tell you this next bit.
+
+## Command-line Arguments: sys.argv is a list
+
+Now let's get our "hello" program to greet an argument passed from the command line. We discussed in the `bash` section that programs can take *positional* arguments, e.g. `ls` can accept the name of the directory you wish to list or `wc` can take the name of a file to count. *Positional* arguments mean the first argument, the second argument, and so on. In the command `ls ~`, the `~` (tilde which means `$HOME` in `bash`) is the one and only positional argument. In the command `ls /bin /usr/bin/`, there are two positional arguments, `/bin` and `/usr/bin/`.
+
+Named options have some sort of prefix, e.g., `find` can take a `-maxdepth` argument to indicate how many levels deep to search. Lastly, commands may also take flags like the `-l` flags to `ls` that indicates you wish to see the "long" listing. 
+
+To get access to the positional arguments to our program, we need to `import sys` which is a package of code that will interact with the system. Those arguments will be a *list*:
 
 ````
 $ cat -n hello_arg.py
@@ -59,11 +144,11 @@ $ cat -n hello_arg.py
      6    print('Hello, ' + args[1] + '!')
 ````
 
-From the `sys` module, we call the `argv` function to get the "argument vector."  This is a list, and, like bash, the name of the script is in the zeroth position (`args[0]`), so the first "argument" to the script is in `args[1]`. It works as you would expect:
+From the `sys` module, we call the `argv` function to get the "argument vector."  This is a list, and, like `bash`, the name of the script is the first argument (in the zeroth position) -- `args[0]`. That means the first *actual* "argument" to the script is in `args[1]`.
 
 ````
-$ ./hello_arg.py Professor
-Hello, Professor!
+$ ./hello_arg.py Geddy
+Hello, Geddy!
 ````
 
 But there is a problem if we fail to pass any arguments:
@@ -76,102 +161,110 @@ Traceback (most recent call last):
 IndexError: list index out of range
 ````
 
-We tried to access something in `args` that doesn't exist, and so the entire program came to a halt ("crashed"). As in bash, we need to check how many arguments we have:
+We tried to access something in `args` that doesn't exist, and so the entire program came to a halt ("crashed"). As in `bash`, we need to check how many arguments we have. Before I show you how to do that, let me explain something about *slicing* lists. Inside the `[]`, you can indicate a start and stop positon like so:
+
+````
+>>> vals
+['foo', 'bar', 'baz']
+>>> vals[1:]
+['bar', 'baz']
+>>> vals[1:2]
+['bar']
+````
+
+In the last example, you see that the stop position is not inclusive. Even though you've seen that Python gets very upset by asking for a position in a list that does not exist, it has no problem giving you nothing when you ask for a *slice* that doesn't exist:
+
+````
+>>> vals[1000:]
+[]
+````
+
+So we can use that to ask for `sys.argv[1:]` to get all the *actual* arguments to our program, skipping over the name of the program itself:
+
 
 ````
 $ cat -n hello_arg2.py
-     1    #!/usr/bin/env python3
+     1	#!/usr/bin/env python3
      2
-     3    import sys
+     3	import sys
      4
-     5    args = sys.argv
+     5	args = sys.argv[1:]
      6
-     7    if len(args) < 2:
-     8        print('Usage:', args[0], 'NAME')
-     9        sys.exit(1)
+     7	if len(args) < 1:
+     8	    print('Usage:', sys.argv[0], 'NAME')
+     9	    sys.exit(1)
     10
-    11    print('Hello, ' + args[1] + '!')
+    11	name = args[0]
+    12	print('Hello, ' + name + '!')
 ````
 
-If there are fewer than 2 arguments (remembering that the script name is in the "first" position), then we print a usage statement and use `sys.exit` to send the operating system a non-zero exit status, just like in bash. It works much better now:
+If there are fewer than 1 argument, then we print a usage statement and use `sys.exit` to send the operating system a non-zero exit status, just like in `bash`. It works much better now:
 
 ````
 $ ./hello_arg2.py
 Usage: ./hello_arg2.py NAME
-$ ./hello_arg2.py Professor
-Hello, Professor!
+$ ./hello_arg2.py Alex
+Hello, Alex!
 ````
 
-On line 7 above, you see we can use the `len` function to ask how long the `args` list is. You can play with the Python REPL to understand `len`. Both strings (like "foobar") and lists (like the arguments to our script) have a "length."  Type `help(list)` in the REPL to read the docs on lists.
-
-````
->>> len('foobar')
-6
->>> len(['foobar'])
-1
->>> len(['foo', 'bar'])
-2
-````
-
-Here is the same functionality but using two new functions, `printf` (from the base package) and `os.path.basename`:
+Here is the same functionality but using some new functions, `str.format` so we can introduce a different way to join strings, and `os.path.basename` so we can get the name of the program without any leading path information like `./`:
 
 ````
 $ cat -n hello_arg3.py
-     1    #!/usr/bin/env python3
-     2    """hello with args"""
-     3
-     4    import sys
-     5    import os
-     6
-     7    args = sys.argv
-     8
-     9    if len(args) != 2:
-    10        script = os.path.basename(args[0])
-    11        print('Usage: {} NAME'.format(script))
-    12        sys.exit(1)
-    13
-    14    name = args[1]
-    15    print('Hello, {}!'.format(name))
+     1	#!/usr/bin/env python3
+     2
+     3	import sys
+     4	import os
+     5
+     6	args = sys.argv[1:]
+     7
+     8	if len(args) != 1:
+     9	    script = os.path.basename(sys.argv[0])
+    10	    print('Usage: {} NAME'.format(script))
+    11	    sys.exit(1)
+    12
+    13	name = args[0]
+    14	print('Hello, {}!'.format(name))
 $ ./hello_arg3.py
 Usage: hello_arg3.py NAME
-$ ./hello_arg3.py Professor
-Hello, Professor!
+$ ./hello_arg3.py Neil
+Hello, Neil!
 ````
 
-Notice the usage doesn't have a "./" on the script name because we used `basename` to clean it up.
+## The main() thing
 
-## main()
-
-Lastly, let me introduce the `main` function. Many languages (e.g., Python, Perl, Rust, Haskell) have the idea of a "main" module/function where all the processing starts. If you define a "main" function, most people reading your code would understand that the program ought to begin there. I usually put my "main" as the first `def` (the keyword to "define" a function), and then use call it at the end of the script. It's a bit of a hack, but it seems to be standard Python.
+Many languages (e.g., Perl, Rust, Haskell) have the idea of a `main` module/function where all the processing starts. If you define a `main` function using `def main`, most people reading your code would understand that the program *ought* to begin there. (I say "ought" because Python won't actually make that happen. You still have to *call* the `main` function to make your program run!) I usually put my `main` first and then call it at the end of the script with this `__name__ == '__main__'` business. This looks a bit of a hack, but it is fairly Pythonic.
 
 ````
 $ cat -n hello_arg4.py
      1	#!/usr/bin/env python3
-     2	"""hello with args/main"""
-     3
-     4	import sys
-     5	import os
-     6
-     7
-     8	def main():
-     9	    """main"""
-    10	    args = sys.argv
-    11
-    12	    if len(args) != 2:
-    13	        script = os.path.basename(args[0])
-    14	        print('Usage: {} NAME'.format(script))
-    15	        sys.exit(1)
+     2
+     3	import sys
+     4	import os
+     5
+     6	def main():
+     7	    args = sys.argv[1:]
+     8
+     9	    if len(args) != 1:
+    10	        script = os.path.basename(sys.argv[0])
+    11	        print('Usage: {} NAME'.format(script))
+    12	        sys.exit(1)
+    13
+    14	    name = args[0]
+    15	    print('Hello, {}!'.format(name))
     16
-    17	    name = args[1]
-    18	    print('Hello, {}!'.format(name))
-    19
-    20
-    21	main()
+    17
+    18	if __name__ == '__main__':
+    19	    main()
+$ ./hello_arg4.py
+Usage: hello_arg4.py NAME
+$ ./hello_arg4.py '2013 Rock and Roll Hall of Fame Inductees'
+Hello, 2013 Rock and Roll Hall of Fame Inductees!
 ````
 
 ## Function Order
 
-Note that you cannot put line 21 first because you cannot call a function that hasn't been defined (lexically) in the program yet. To add insult to injury, this is a **run-time error** -- meaning the mistake isn't caught by the compiler when the program is parsed into byte-code; instead the program just crashes.
+Note that you cannot put call to `main()` before `def main` because you cannot call a function that hasn't been defined (lexically) in the program yet. To add insult to injury, this is a **run-time error** -- meaning the mistake isn't caught by the compiler when the program is parsed into byte-code; instead the program just crashes.
 
 ````
 $ cat -n func-def-order.py
@@ -211,100 +304,63 @@ Ending the program
 
 ## Handle All The Args!
 
-If we like, we can say "hi" to any number of arguments:
+If we like, we can greet to any number of arguments:
 
 ````
 $ cat -n hello_arg5.py
      1	#!/usr/bin/env python3
-     2	"""hello with to many"""
-     3
-     4	import sys
-     5	import os
-     6
-     7
-     8	def main():
-     9	    """main"""
-    10	    args = sys.argv
-    11
-    12	    if len(args) < 2:
-    13	        script = os.path.basename(args[0])
-    14	        print('Usage: {} NAME [NAME2 ...]'.format(script))
-    15	        sys.exit(1)
-    16
-    17	    names = args[1:]
-    18	    print('Hello, {}!'.format(', '.join(name)))
-    19
-    20
-    21	main()
-$ ./hello_arg5.py foo
-Hello, foo!
-$ ./hello_arg5.py foo bar baz
-Hello, foo, bar, baz!
+     2
+     3	import sys
+     4	import os
+     5
+     6	def main():
+     7	    names = sys.argv[1:]
+     8
+     9	    if len(names) < 1:
+    10	        script = os.path.basename(sys.argv[0])
+    11	        print('Usage: {} NAME [NAME2 ...]'.format(script))
+    12	        sys.exit(1)
+    13
+    14	    print('Hello, {}!'.format(', '.join(names)))
+    15
+    16	if __name__ == '__main__':
+    17	    main()
+$ ./hello_arg5.py
+Usage: hello_arg5.py NAME [NAME2 ...]
+$ ./hello_arg5.py Geddy Alex Neil
+Hello, Geddy, Alex, Neil!
 ````
 
-Look at line 18 to see how we can `join` all the arguments on a comma-space, e.g.,:
+Notice on line 14 to see how we can `join` all the arguments on a comma + space.
 
-````
->>> ', '.join(['foo', 'bar', 'baz'])
-'foo, bar, baz'
->>> ':'.join("hello")
-'h:e:l:l:o'
-````
+## Conditionals
 
-Notice the second example where we can treat a string like a list of characters.
-
-The other interesting bit on line 16 is how to take a slice of a list. We want all the elements of `args` starting at position 1, so `args[1:]`. You can indicate a start and/or end position. It's best to play with it to understand:
-
-````
->>> x = ['foo', 'bar', 'baz']
->>> x[1]
-'bar'
->>> x[1:]
-['bar', 'baz']
->>> a = "abcdefghijklmnopqrstuvwxyz"
->>> a[2:4]
-'cd'
->>> a[:3]
-'abc'
->>> a[3:]
-'defghijklmnopqrstuvwxyz'
->>> a[-1]
-'z'
->>> a[-3]
-'x'
->>> a[-3:]
-'xyz'
->>> a[-3:26]
-'xyz'
->>> a[-3:27]
-'xyz'
-````
-
-# Conditionals
-
-Above we saw a simple `if` condition, but what if you want to test for more then one condition?  Here is a program that shows you how to take input directly from the user:
+So far we've been using an `if` condition to see if we have enough arguments. If you want to test for more than one condition, you can use `elif` (else if) and `else` ("otherwise" or the "default" branch if all others fail). Here we'll use the `input` function to present the user with a prompt and get their input:
 
 ````
 $ cat -n if-else.py
-     1    #!/usr/bin/env python3
-     2    """conditions"""
-     3
-     4    name = input('What is your name? ')
-     5    age = int(input('Hi, ' + name + '. What is your age? '))
-     6
-     7    if age < 0:
-     8        print("That isn't possible.")
-     9    elif age < 18:
-    10        print('You are a minor.')
-    11    else:
-    12        print('You are an adult.')
+     1	#!/usr/bin/env python3
+     2
+     3	name = input('What is your name? ')
+     4	age = int(input('Hi, ' + name + '. What is your age? '))
+     5
+     6	if age < 0:
+     7	    print("That isn't possible.")
+     8	elif age < 18:
+     9	    print('You are a minor.')
+    10	else:
+    11	    print('You are an adult.')
 $ ./if-else.py
-What is your name? Geoffrey
-Hi, Geoffrey. What is your age? 47
+What is your name? Ken
+Hi, Ken. What is your age? -4
+That isn't possible.
+$ ./if-else.py
+What is your name? Lincoln
+Hi, Lincoln. What is your age? 29
 You are an adult.
 ````
 
-On line 4, we can put the first answer into the `name` variable; however, on line 5, I convert the answer to an integer with `int` because I will need to compare it numerically, cf:
+On line 3, we can put the first answer directly into the `name` variable; however, on line 4, I need to convert the answer to an integer with `int` because I will need to compare it numerically, cf:
 
 ````
 >>> 4 < 5
@@ -317,108 +373,53 @@ TypeError: unorderable types: str() < int()
 True
 ````
 
-## Types
-
-Which leads into the notion that Python, unlike bash, has types -- variables can hold string, integers, floating-point numbers, lists, dictionaries, and more:
+Things go very badly if we blindly try to coerce a string into an `int`:
 
 ````
->>> type('foo')
-<class 'str'>
->>> type(4)
-<class 'int'>
->>> type(3.14)
-<class 'float'>
->>> type(['foo', 'bar'])
-<class 'list'>
->>> type(range(1,3))
-<class 'range'>
->>> type({'name': 'Geoffrey', 'age': 47})
-<class 'dict'>
-````
-
-As noted earlier, you can use `help` on any of the class names to find out more of what you can do with them.
-
-So let's return to the `+` operator earlier and check out how it works with different types:
-
-````
->>> 1 + 2
-3
->>> 'foo' + 'bar'
-'foobar'
->>> '1' + 2
+$ ./if-else.py
+What is your name? Doreen
+Hi, Doreen. What is your age? Ageless
 Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-TypeError: must be str, not int
+  File "./if-else.py", line 4, in <module>
+    age = int(input('Hi, ' + name + '. What is your age? '))
+ValueError: invalid literal for int() with base 10: 'Ageless'
 ````
 
-Python will crash if you try to "add" two different types together, but the type of the argument depends on the run-time conditions:
+Later we'll talk about how to avoid problems like this.
 
-````
->>> x = 4
->>> y = 5
->>> x + y
-9
->>> z = '1'
->>> x + z
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-TypeError: unsupported operand type(s) for +: 'int' and 'str'
-````
-
-To avoid such errors, you can coerce your data:
-
-````
->>> int(x) + int(z)
-5
-````
-
-Or check the types at run-time:
-
-````
->>> for pair in [(1, 2), (3, '4')]:
-...    n1, n2 = pair[0], pair[1]
-...    if type(n1) == int and type(n2) == int:
-...        print('{} + {} = {}'.format(n1, n2, n1 + n2))
-...    else:
-...        print('Cannot add {} ({}) and {} ({})'.format(n1, type(n1), n2, type(n2)))
-...
-1 + 2 = 3
-Cannot add 3 (<class 'int'>) and 4 (<class 'str'>)
-````
-
-## Loops
+## Looping Over Lists
 
 As in bash, we can use `for` loops in Python. Here's another way to greet all the people:
 
 ````
 $ cat -n hello_arg6.py
      1	#!/usr/bin/env python3
-     2	"""hello with to many"""
-     3
-     4	import sys
-     5	import os
-     6
-     7
-     8	def main():
-     9	    """main"""
-    10	    args = sys.argv
-    11
-    12	    if len(args) < 2:
-    13	        script = os.path.basename(args[0])
-    14	        print('Usage: {} NAME [NAME2 ...]'.format(script))
-    15	        sys.exit(1)
+     2
+     3	import sys
+     4	import os
+     5
+     6	def main():
+     7	    names = sys.argv[1:]
+     8
+     9	    if len(names) < 1:
+    10	        prg = os.path.basename(sys.argv[0])
+    11	        print('Usage: {} NAME [NAME2 ...]'.format(prg))
+    12	        sys.exit(1)
+    13
+    14	    for name in names:
+    15	        print('Hello, ' + name + '!')
     16
-    17	    for name in args[1:]:
-    18	        print('Hello, ' + name + '!')
-    19
-    20
-    21	main()
+    17
+    18	if __name__ == '__main__':
+    19	    main()
+$ ./hello_arg6.py
+Usage: hello_arg6.py NAME [NAME2 ...]
 $ ./hello_arg6.py Salt Peppa
 Hello, Salt!
 Hello, Peppa!
 ````
 
-You can use a `for` loop on anything that is like a list:
+You can use a `for` loop on anything that is like a list! A string is a list of characters:
 
 ````
 >>> for letter in "abc":
@@ -427,6 +428,11 @@ You can use a `for` loop on anything that is like a list:
 a
 b
 c
+````
+
+The `range` function returns something that can be "iterated" like a list:
+
+````
 >>> for number in range(0, 5):
 ...    print(number)
 ...
@@ -435,11 +441,21 @@ c
 2
 3
 4
+````
+
+Lists, of course:
+
+````
 >>> for word in ['foo', 'bar']:
 ...    print(word)
 ...
 foo
 bar
+````
+
+You can use the `str.split` function to split a string (the default is to split on spaces):
+
+````
 >>> for word in 'We hold these truths'.split():
 ...    print(word)
 ...
@@ -447,6 +463,11 @@ We
 hold
 these
 truths
+````
+
+And we can use the `open` function to open a file and read each line using a `for` loop:
+
+````
 >>> for line in open('input1.txt'):
 ...    print(line, end='')
 ...
@@ -455,72 +476,68 @@ some text
 from a file.
 ````
 
-In each case, we're iterating over the members of a list as produced from a string, a range, an actual list, a list produced by a function, and an open file, respectively. (That last example either needs to suppress the newline from `print` or do `rstrip()` on the line to remove it as the text coming from the file has a newline.)
+The last example either needs to suppress the newline from `print` or do `rstrip()` on the line to remove it as the text coming from the file has a newline.
 
-# Stubbing new programs
+## Stubbing new programs
 
 Every program we've seen so far has had the same basic structure:
 
 * Shebang
-* Docstring
-* imports
-* def main()
-* main()
+* import modules
+* define main()
+* call main()
+
+Additionally we keep having to write the same few lines of code to get the arguments from `sys.argv[1:]` and then test that we have the right number and then print a usage and `sys.exit(1)`. Rather than type all that boilerplate or copy-paste from other programs, let's use a program to help us create new programs.
+
+Included in the `bin` directory of the GitHub repo, there is a program called `new_py.py` that will stub out all this code for you. Make sure you either add that directory to you `$PATH` or copy that program into your existing `$PATH`, e.g., I like to have `$HOME/.local/bin` for programs like this:
 
 ````
-#!/usr/bin/env python3
-"""program docstring"""
-
-import sys
-import os
-
-
-def main():
-    """main"""
-    ...
-
-main()
+$ which new_py.py
+/Users/kyclark/.local/bin/new_py.py
 ````
 
-Rather than type this out each time, let's use a program to help us start writing new programs. In `/rsgrps/bh_class/bin` (which should be in your `$PATH` by now), you will see `new_py.py`. (If you are working locally on your laptop -- which I **strongly** recommend you learn how -- you can find the program in `biosys-analytics/bin` which you can either copy into a directory in your `$PATH` or add that directory to your `$PATH`).
+Now run it with no arguments. As you might expect, it gives you a usage statement:
 
-Try this:
+````
+$ new_py.py
+usage: new_py.py [-h] [-a] [-f] program
+new_py.py: error: the following arguments are required: program
+````
+
+Give it the name of a new program (either with or without `.py`):
 
 ````
 $ new_py.py foo
 Done, see new script "foo.py."
-$ cat foo.py
-#!/usr/bin/env python3
-"""
-Author : kyclark
-Date   : 2019-01-24
-Purpose: Rock the Casbah
-"""
-
-import os
-import sys
-
-
-# --------------------------------------------------
-def main():
-    args = sys.argv[1:]
-
-    if len(args) != 1:
-        print('Usage: {} ARG'.format(os.path.basename(sys.argv[0])))
-        sys.exit(1)
-
-    arg = args[0]
-
-    print('Arg is "{}"'.format(arg))
-
-
-# --------------------------------------------------
-main()
+$ cat -n foo.py
+     1	#!/usr/bin/env python3
+     2	"""
+     3	Author : kyclark
+     4	Date   : 2019-05-14
+     5	Purpose: Rock the Casbah
+     6	"""
+     7
+     8	import os
+     9	import sys
+    10
+    11
+    12	# --------------------------------------------------
+    13	def main():
+    14	    args = sys.argv[1:]
+    15
+    16	    if len(args) != 1:
+    17	        print('Usage: {} ARG'.format(os.path.basename(sys.argv[0])))
+    18	        sys.exit(1)
+    19
+    20	    arg = args[0]
+    21
+    22	    print('Arg is "{}"'.format(arg))
+    23
+    24
+    25	# --------------------------------------------------
+    26	if __name__ == '__main__':
+    27	    main()
 ````
-
-I will not require you to use this program to write new scripts, but I do suggest it could save you time and errors. I wrote this for myself, and I use it every time I start a new program. I first wrote a program like this in the mid-90s using Perl and have always relied on stubbers since.
-
-Notice that the ".py" extension was added for you. You may specify `foo.py` if you prefer.
 
 What happens if you try to initialize a script when one already exists with that name?
 
@@ -530,7 +547,11 @@ $ new_py.py foo
 Will not overwrite. Bye!
 ````
 
-Unless you answer "y", the script will not be overwritten. You could also use the `-f|--force` flag to force the overwritting of an existing file. Run with `-h|--help` to see all the options:
+Unless you answer "y", the script will not be overwritten. You could also use the `-f|--force` flag to force the overwritting of an existing file. 
+
+## Introducing argparse
+
+Run `new_py.py` with `-h` or `--help` to see all the options:
 
 ````
 $ new_py.py -h
@@ -547,89 +568,89 @@ optional arguments:
   -f, --force     Overwrite existing (default: False)
 ````
 
-Hey, what is `--argparse` about? Let's try it! I will combine the two short flag `-a` and `-f` into `-fa` to "force" a new script that uses the "argparse" module to give us named options.
+Hey, what is `--argparse` about? Let's try it! I will combine the two short flag `-a` and `-f` into `-fa` to "force" a new script that uses the `argparse` module to give us positional arguments, named arguments, and flags.
 
 ````
 $ new_py.py -fa foo
 Done, see new script "foo.py."
-[hpc:login3@~]$ cat foo.py
-#!/usr/bin/env python3
-"""
-Author : kyclark
-Date   : 2019-01-24
-Purpose: Rock the Casbah
-"""
-
-import argparse
-import sys
-
-
-# --------------------------------------------------
-def get_args():
-    """get command-line arguments"""
-    parser = argparse.ArgumentParser(
-        description='Argparse Python script',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument(
-        'positional', metavar='str', help='A positional argument')
-
-    parser.add_argument(
-        '-a',
-        '--arg',
-        help='A named string argument',
-        metavar='str',
-        type=str,
-        default='')
-
-    parser.add_argument(
-        '-i',
-        '--int',
-        help='A named integer argument',
-        metavar='int',
-        type=int,
-        default=0)
-
-    parser.add_argument(
-        '-f', '--flag', help='A boolean flag', action='store_true')
-
-    return parser.parse_args()
-
-
-# --------------------------------------------------
-def warn(msg):
-    """Print a message to STDERR"""
-    print(msg, file=sys.stderr)
-
-
-# --------------------------------------------------
-def die(msg='Something bad happened'):
-    """warn() and exit with error"""
-    warn(msg)
-    sys.exit(1)
-
-
-# --------------------------------------------------
-def main():
-    """Make a jazz noise here"""
-    args = get_args()
-    str_arg = args.arg
-    int_arg = args.int
-    flag_arg = args.flag
-    pos_arg = args.positional
-
-    print('str_arg = "{}"'.format(str_arg))
-    print('int_arg = "{}"'.format(int_arg))
-    print('flag_arg = "{}"'.format(flag_arg))
-    print('positional = "{}"'.format(pos_arg))
-
-
-# --------------------------------------------------
-if __name__ == '__main__':
-    main()
+$ cat -n foo.py
+     1	#!/usr/bin/env python3
+     2	"""
+     3	Author : kyclark
+     4	Date   : 2019-05-14
+     5	Purpose: Rock the Casbah
+     6	"""
+     7
+     8	import argparse
+     9	import sys
+    10
+    11
+    12	# --------------------------------------------------
+    13	def get_args():
+    14	    """get command-line arguments"""
+    15	    parser = argparse.ArgumentParser(
+    16	        description='Argparse Python script',
+    17	        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    18
+    19	    parser.add_argument(
+    20	        'positional', metavar='str', help='A positional argument')
+    21
+    22	    parser.add_argument(
+    23	        '-a',
+    24	        '--arg',
+    25	        help='A named string argument',
+    26	        metavar='str',
+    27	        type=str,
+    28	        default='')
+    29
+    30	    parser.add_argument(
+    31	        '-i',
+    32	        '--int',
+    33	        help='A named integer argument',
+    34	        metavar='int',
+    35	        type=int,
+    36	        default=0)
+    37
+    38	    parser.add_argument(
+    39	        '-f', '--flag', help='A boolean flag', action='store_true')
+    40
+    41	    return parser.parse_args()
+    42
+    43
+    44	# --------------------------------------------------
+    45	def warn(msg):
+    46	    """Print a message to STDERR"""
+    47	    print(msg, file=sys.stderr)
+    48
+    49
+    50	# --------------------------------------------------
+    51	def die(msg='Something bad happened'):
+    52	    """warn() and exit with error"""
+    53	    warn(msg)
+    54	    sys.exit(1)
+    55
+    56
+    57	# --------------------------------------------------
+    58	def main():
+    59	    """Make a jazz noise here"""
+    60	    args = get_args()
+    61	    str_arg = args.arg
+    62	    int_arg = args.int
+    63	    flag_arg = args.flag
+    64	    pos_arg = args.positional
+    65
+    66	    print('str_arg = "{}"'.format(str_arg))
+    67	    print('int_arg = "{}"'.format(int_arg))
+    68	    print('flag_arg = "{}"'.format(flag_arg))
+    69	    print('positional = "{}"'.format(pos_arg))
+    70
+    71
+    72	# --------------------------------------------------
+    73	if __name__ == '__main__':
+    74	    main()
 ````
 
-The advantage here is that we can now get quite detailed help documentation and very specific behavior from our arguments, e.g., one argument needs to be a string while another needs to be a number while another is a true/false, off/on flag:
+That's a good bit more code, but the advantage here is that we can now get quite detailed help documentation and very specific behavior from our arguments, e.g., one argument needs to be a string while another needs to be a number while another is a true/false flag. You can immediately run the program that was just created and see the usage:
 
 ````
 $ ./foo.py -h
@@ -648,3 +669,172 @@ optional arguments:
 ````
 
 All this without writing a line of Python! Quite useful.
+
+In my experience, perhaps 20-50% of the effort to solve most of the exercises can be handled by using `argparse` well. You can specify an exact number of positional arguments, you can specify named arguments that must be constrained to a list of choices, you can force one argument to be an `int` and another to be a `float`, you can get Boolean flags or ensure that arguments are existing files that can be opened and read. I urge you to read the documentation for `argparse` thoroughly. I often find the REPL is quite useful for this:
+
+````
+>>> import argparse
+>>> help(argparse)
+````
+
+## Exercises
+
+Now is the time for you to write your own programs. Go into the `exercises` directory and solve `hello_a`. The way you are intended to work is to read the README, then use `new_py.py` to stub out the named program, then use `make test` to pass the tests. 
+
+
+### Exercise: hello
+
+If you `ls` the directory, you should see something like this:
+
+````
+$ ls
+Makefile     README.md    README.pdf   solution.py* test.py*
+````
+
+The README says:
+
+Write a Python program named `hello.py` that warmly greets the names you provide.  When there are two names, join them with "and."  When there are three or more, join them on commas (INCLUDING THE OXFORD WE ARE NOT SAVAGES) and "and." If no names are supplied, print a usage.
+
+````
+$ ./hello.py
+Usage: hello.py NAME [NAME...]
+$ ./hello.py Alice
+Hello to the 1 of you: Alice!
+$ ./hello.py Mike Carol
+Hello to the 2 of you: Mike and Carol!
+$ ./hello.py Greg Peter Bobby Marcia Jane Cindy
+Hello to the 6 of you: Greg, Peter, Bobby, Marcia, Jane, and Cindy!
+````
+
+The name of the program should be `hello.py`, so do this:
+
+````
+$ new_py.py hello
+Done, see new script "hello.py."
+$ cat -n hello.py
+     1	#!/usr/bin/env python3
+     2	"""
+     3	Author : kyclark
+     4	Date   : 2019-05-14
+     5	Purpose: Rock the Casbah
+     6	"""
+     7
+     8	import os
+     9	import sys
+    10
+    11
+    12	# --------------------------------------------------
+    13	def main():
+    14	    args = sys.argv[1:]
+    15
+    16	    if len(args) != 1:
+    17	        print('Usage: {} ARG'.format(os.path.basename(sys.argv[0])))
+    18	        sys.exit(1)
+    19
+    20	    arg = args[0]
+    21
+    22	    print('Arg is "{}"'.format(arg))
+    23
+    24
+    25	# --------------------------------------------------
+    26	if __name__ == '__main__':
+    27	    main()
+````
+
+Next you will run `make test`, but let's take a moment to understand what this command is doing. The `make` program will look for a file called `Makefile` (or `makefile`) and will then look for a "target" called `test`. Look at the `Makefile`:
+
+````
+$ cat -n Makefile
+     1	.PHONY: doc test
+     2
+     3	doc:
+     4		pandoc README.md -o README.pdf
+     5
+     6	test:
+     7		pytest -v test.py
+````
+
+You see there is a line with `test:` that starts on the far left side of the file and there is some text indented *with a tab* underneath it. The indented bit will be run when we say `make test`, so you could just run `pytest -v test.py` directly if you wish or if your system doesn't have `make` installed. If you don't have `pytest` installed, then probably this will do it:
+
+````
+$ python3 -m pip install pytest
+````
+
+Or if you have the Anaconda distribution (highly recommended), then you could do this:
+
+````
+$ conda install pytest
+````
+
+Now, run `make test` and you should see that you are already passing one test -- the usage! That is because `new_py.py` automatically adds that code for you. Of course, it's not accurate code:
+
+````
+$ ./hello.py
+Usage: hello.py ARG
+````
+
+Our program is supposed to take multiple arguments, and we've been given the expected usage in the README, so first correct that. 
+
+Now look at the first failure:
+
+````
+=================================== FAILURES ===================================
+___________________________________ test_01 ____________________________________
+
+    def test_01():
+        """runs hello"""
+
+        rv, out = getstatusoutput('{} {}'.format(prg, 'Alice'))
+        assert rv == 0
+>       assert out.rstrip() == 'Hello to the 1 of you: Alice!'
+E       assert 'Arg is "Alice"' == 'Hello to the 1 of you: Alice!'
+E         - Arg is "Alice"
+E         + Hello to the 1 of you: Alice!
+````
+
+The lines starting with `E` are the errors we need to fix. It's telling us that the output from the program `out` should equal 'Hello to the 1 of you: Alice!' but instead it says 'Arg is "Alice"'. Confirm this is the case:
+
+````
+$ ./hello.py Alice
+Arg is "Alice"
+````
+
+OK, go fix that.
+
+````
+$ ./hello.py Alice
+Hello to the 1 of you: Alice!
+````
+
+And now run `make test`. You should find you now pass two tests! Here's the next failure:
+
+````
+=================================== FAILURES ===================================
+___________________________________ test_02 ____________________________________
+
+    def test_02():
+        """runs hello"""
+
+        rv, out = getstatusoutput('{} {}'.format(prg, ' Mike Carol'))
+        assert rv == 0
+>       assert out.rstrip() == 'Hello to the 2 of you: Mike and Carol!'
+E       AssertionError: assert '' == 'Hello to the 2 of you: Mike and Carol!'
+E         + Hello to the 2 of you: Mike and Carol!
+````
+
+Now when given the arguments "Mike" and "Carol", we need to fix the greeting. When you are passing that test, then move on to the next failure. In this way, you will eventually have a program that meets the specifications. At any point you can inspect the `solution.py` that I have provided if you get stuck or want to compare your version with what I wrote.
+
+For what it's worth, this is the idea of "Test-Driven Development" which you can read about on the Internet.
+
+### Exercise: article.py
+
+Make a Python program called `article.py` that prepends before the given "word" (it may not really be a word) the article "a" if the word begins with a consonant or "an" if it begins with a vowel. If given no arguments, the program should provide a usage statement.
+
+````
+$ ./article.py
+Usage: article.py WORD
+$ ./article.py foo
+a foo
+$ ./article.py oof
+an oof
+````

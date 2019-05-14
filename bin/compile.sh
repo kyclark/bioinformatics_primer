@@ -4,10 +4,11 @@ set -u
 
 BOOK=$(mktemp)
 
-cat /dev/null > "$BOOK"
-
-i=0
-#find . -maxdepth 2 -mindepth 2 -name \*.md -not -name README.md | sort > "$CHAPTERS"
+echo "# Intro" > "$BOOK"
+cat README.md >> "$BOOK"
+echo "" >> "$BOOK"
+echo '\pagebreak' >> "$BOOK"
+echo "" >> "$BOOK"
 
 CHAPTERS=$(mktemp)
 find . -maxdepth 1 -mindepth 1 -name ch\* -type d | sort > "$CHAPTERS"
@@ -21,25 +22,6 @@ while read -r CHAPTER; do
     echo "# Chapter $CH_NUM" >> "$BOOK"
     echo "" >> "$BOOK"
     cat "$MD" >> "$BOOK"
-
-    #EX_DIR="$CHAPTER/exercises"
-    #if [[ -d "$EX_DIR" ]]; then
-    #    EXERCISES=$(mktemp)
-    #    find "$EX_DIR" -mindepth 1 -maxdepth 1 -type d | sort > "$EXERCISES"
-
-    #    EX_NUM=0
-    #    while read -r EX_DIR; do
-    #        README="$EX_DIR/README.md"
-    #        EX_NUM=$((EX_NUM+1))
-
-    #        if [[ -f "$README" ]]; then
-    #            echo $README
-    #            echo "# Exercise $EX_NUM: $(basename "$EX_DIR")" >> "$BOOK"
-    #            cat "$README" >> "$BOOK"
-    #        fi
-    #    done < "$EXERCISES"
-    #fi
-
     echo "" >> "$BOOK"
     echo '\pagebreak' >> "$BOOK"
     echo "" >> "$BOOK"
@@ -48,6 +30,6 @@ done < "$CHAPTERS"
 pandoc "$BOOK" -o "PPDS.epub"
 pandoc "$BOOK" -o "PPDS.pdf"
 
-#rm "$BOOK"
+rm "$BOOK"
 
 echo "Done."

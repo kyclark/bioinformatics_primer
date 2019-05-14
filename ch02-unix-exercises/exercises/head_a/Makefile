@@ -1,13 +1,7 @@
-.PHONY: cat head doc test 
+.PHONY: pdf test 
 
 test:
-	python3 -m pytest -v test.py
+	pytest -v test.py
 
-cat:
-	./cat-n.sh files/sonnet-29.txt
-
-head:
-	./head.sh files/issa.txt
-
-doc:
+pdf:
 	pandoc README.md -o README.pdf

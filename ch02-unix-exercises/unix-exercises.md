@@ -515,3 +515,98 @@ Vietnam    1982    56142181    Asia    58.816    707.2357863
 Vietnam    1987    62826491    Asia    62.82    820.7994449
 Vietnam    1992    69940728    Asia    67.662    989.0231487
 ````
+
+# Exercises
+
+## Exercise: head.sh
+
+Write a bash script called `head.sh` that mimics the `head` utility where it will print the first few lines of a file.  The script should expect one required argument (the file) and a second optional argument of the number of lines, defaulting to 3. If are no arguments, it should print a "Usage" and exit *with an error code* Your program will expect to receive an argument in `$1` and maybe a second in `$2`. If the first argument is not a file, it should notify the user and exit *with an error code*. If the second argument is missing, use the value "3". Print the number of lines requested by the user by iterating over the lines in the file and exiting the loop appropriately. Do not use the actual `head` command!
+
+
+````
+$ ./head.sh
+Usage: head.sh FILE NUM
+$ ./head.sh files/issa.txt
+Selected Haiku by Issa
+
+Don’t worry, spiders,
+$ ./head.sh files/issa.txt 5
+Selected Haiku by Issa
+
+Don’t worry, spiders,
+I keep house
+casually.
+````
+
+## Exercise: cat_n.sh
+
+Write a bash program called `cat_n.sh` that mimics the behavior of `cat -n` where it will print the line number and line of an input file. If there are no arguments, it should print a "Usage" and exit *with an error code*. Your program will expect to receive an argument in `$1`. If the argument is not a file, it should notify the user and exit *with an error code*. It will iterate over the lines in the file and print the line number, a space, and the line of the file. Your output will differ from regular `cat -n` as I won't expect you to right-align the numbers.
+
+
+````
+$ ./cat_n.sh
+Usage: cat-n.sh FILE
+$ ./cat_n.sh foo
+foo is not a file
+$ ./cat_n.sh files/sonnet-29.txt
+1 Sonnet 29
+2 William Shakespeare
+3
+4 When, in disgrace with fortune and men’s eyes,
+5 I all alone beweep my outcast state,
+6 And trouble deaf heaven with my bootless cries,
+7 And look upon myself and curse my fate,
+8 Wishing me like to one more rich in hope,
+9 Featured like him, like him with friends possessed,
+10 Desiring this man’s art and that man’s scope,
+11 With what I most enjoy contented least;
+12 Yet in these thoughts myself almost despising,
+13 Haply I think on thee, and then my state,
+14 (Like to the lark at break of day arising
+15 From sullen earth) sings hymns at heaven’s gate;
+16 For thy sweet love remembered such wealth brings
+17 That then I scorn to change my state with kings.
+````
+
+## Exercise: hello.sh
+
+Create a bash script called `hello.sh` that accepts one or two arguments. If there are no arguments, it should print a "Usage" and exit *with an error code*. Your program will expect to receive a "greeting" in `$1` and possibly a name in `$2`; if there is no second argument, use "Human" as the default. If there are more than two arguments, print a "Usage" and exit *with an error code*. Print the greeting, a comma and space, the name, and an exclamation point.
+
+
+````
+$ ./hello.sh
+Usage: hello.sh GREETING [NAME]
+$ ./hello.sh That\'ll do pig
+Usage: hello.sh GREETING [NAME]
+$ ./hello.sh "That'll do" pig
+That'll do, pig!
+$ ./hello.sh "Top o' the morning"
+Top o' the morning, Human!
+$ ./hello.sh "Greetings" "Earthling"
+Greetings, Earthling!
+````
+
+## Exercise: gap.sh
+
+Write a bash script called `gap.sh` that will print out the files in the `gapminder` directory. Note that to be portable for testing purposes, you will need to use a **relative** path from the directory where the script lives (hint: start with `$PWD`). If there are no arguments, print out all the *basenames* of the files in sorted order. If there is an argument, treat it like a regular expression and find files where the basename matches at the beginning of the string in a case-insensitive manner and print them in sorted order. If no files are found, print a message telling the user.
+
+````
+$ ./gap.sh | head -5
+     1  Afghanistan
+     2  Albania
+     3  Algeria
+     4  Angola
+     5  Argentina
+$ ./gap.sh l
+     1  Lebanon
+     2  Lesotho
+     3  Liberia
+     4  Libya
+$ ./gap.sh [w-z]
+     1  West_Bank_and_Gaza
+     2  Yemen_Rep
+     3  Zambia
+     4  Zimbabwe
+$ ./gap.sh x
+There are no countries starting with "x"
+````

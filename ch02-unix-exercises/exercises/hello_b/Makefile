@@ -1,7 +1,7 @@
-.PHONY: doc test 
+.PHONY: pdf test 
 
 test:
-	python3 -m pytest -v test.py
+	pytest -v test.py
 
-doc:
+pdf:
 	pandoc README.md -o README.pdf

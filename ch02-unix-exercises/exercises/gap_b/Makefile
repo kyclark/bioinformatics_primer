@@ -1,9 +1,9 @@
-.PHONY: doc test clean
+.PHONY: pdf test clean
 
 test:
 	pytest -v test.py
 
-doc:
+pdf:
 	pandoc README.md -o README.pdf
 
 clean:

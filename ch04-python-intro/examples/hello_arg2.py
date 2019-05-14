@@ -2,10 +2,11 @@
 
 import sys
 
-args = sys.argv
+args = sys.argv[1:]
 
-if len(args) < 2:
-    print('Usage:', args[0], 'NAME')
+if len(args) < 1:
+    print('Usage:', sys.argv[0], 'NAME')
     sys.exit(1)
 
-print('Hello, ' + args[1] + '!')
+name = args[0]
+print('Hello, ' + name + '!')

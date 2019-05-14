@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
-"""hello with to many"""
 
 import sys
 import os
 
-
 def main():
-    """main"""
-    args = sys.argv
+    names = sys.argv[1:]
 
-    if len(args) < 2:
-        script = os.path.basename(args[0])
-        print('Usage: {} NAME [NAME2 ...]'.format(script))
+    if len(names) < 1:
+        prg = os.path.basename(sys.argv[0])
+        print('Usage: {} NAME [NAME2 ...]'.format(prg))
         sys.exit(1)
 
-    for name in args[1:]:
+    for name in names:
         print('Hello, ' + name + '!')
 
 
-main()
+if __name__ == '__main__':
+    main()

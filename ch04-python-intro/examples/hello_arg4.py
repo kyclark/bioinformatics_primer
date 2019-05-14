@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
-"""hello with args/main"""
 
 import sys
 import os
 
 def main():
-    """main"""
-    args = sys.argv
+    args = sys.argv[1:]
 
-    if len(args) != 2:
-        script = os.path.basename(args[0])
+    if len(args) != 1:
+        script = os.path.basename(sys.argv[0])
         print('Usage: {} NAME'.format(script))
         sys.exit(1)
 
-    name = args[1]
+    name = args[0]
     print('Hello, {}!'.format(name))
 
 
-main()
+if __name__ == '__main__':
+    main()

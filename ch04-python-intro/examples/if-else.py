@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""conditions"""
 
 name = input('What is your name? ')
 age = int(input('Hi, ' + name + '. What is your age? '))

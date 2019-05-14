@@ -32,6 +32,7 @@ adipoma              7
 
 A passing test suite should look like this:
 
+````
 $ make test
 python3 -m pytest -v test.py
 ============================= test session starts ==============================

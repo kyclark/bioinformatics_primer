@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """What are you bringing to the picnic?"""
 
+
 # --------------------------------------------------
 def joiner(items):
     """properly conjuct items"""
@@ -15,23 +16,27 @@ def joiner(items):
         items[-1] = 'and ' + items[-1]
         return ', '.join(items)
 
+
 # --------------------------------------------------
 def main():
-    """start here"""
+    """main"""
     items = []
 
     while True:
-        item = input('What {}are you bringing? [q to quit] '.format('else ' if items else ''))
-        if item == 'q':
+        item = input('What {}are you bringing? [! to quit] '.format(
+            'else ' if items else ''))
+        if item == '!':
             break
         elif len(item.strip()) > 0:
             if item in items:
                 print('You said "{}" already.'.format(item))
             else:
                 items.append(item)
+                # pass a copy because it gets mutated!
                 print("We'll have {}.".format(joiner(items.copy())))
 
     print('Bye.')
+
 
 # --------------------------------------------------
 if __name__ == '__main__':

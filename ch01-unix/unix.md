@@ -488,6 +488,6 @@ $ make && make install
 
 When I'm in an environment with a directory I can share with my team (like the UA HPC), I'll configure the package to install into that shared space so that others can use the program. When I'm on a system like "stampede" where I cannot share with others, I'll usually install into my `$HOME/.local` or some sort of "work" directory.
 
-# The (Data and Software) Carpentries
+# The Data and Software Carpentries
 
-The Software Carpentry project aims to teach basic command-line usage. You should definitely look through `https://swcarpentry.github.io/shell-novice/`.
+The Software Carpentry project aims to teach basic command-line usage. You should definitely work through `https://swcarpentry.github.io/shell-novice/`.

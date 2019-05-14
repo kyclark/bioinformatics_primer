@@ -3,30 +3,37 @@
 
 import os
 import sys
-from itertools import product, chain
+from itertools import product
 
-args = sys.argv[1:]
 
-if len(args) != 1:
-    print('Usage: {} NUM_GENES'.format(os.path.basename(sys.argv[0])))
+def die(msg):
+    """print and exit with an error"""
+    print(msg)
     sys.exit(1)
 
-if not args[0].isdigit():
-    print('"{}" does not look like an integer'.format(args[0]))
-    sys.exit(1)
 
-num_genes = int(args[0])
-if not 2 <= num_genes <= 10:
-    print('NUM_GENES must be greater than 1, less than 10')
-    sys.exit(1)
+def main():
+    """main"""
+    args = sys.argv[1:]
 
-def gen(prefix):
-    return [prefix + str(n + 1) for n in range(num_genes)]
+    if len(args) != 1:
+        die('Usage: {} NUM_GENES'.format(os.path.basename(sys.argv[0])))
 
-promotors = gen('P')
-coding = gen('C')
-terminators = gen('T')
+    if not args[0].isdigit():
+        die('"{}" does not look like an integer'.format(args[0]))
 
-print('N = "{}"'.format(num_genes))
-for i, combo in enumerate(chain(product(promotors, coding, terminators))):
-    print('{:3}: {}'.format(i + 1, combo))
+    num_genes = int(args[0])
+    if not 2 <= num_genes <= 10:
+        die('NUM_GENES must be greater than 1, less than 10')
+
+    def gen(prefix):
+        return [prefix + str(n) for n in range(1, num_genes + 1)]
+
+    print('N = "{}"'.format(num_genes))
+    combos = product(gen('P'), gen('C'), gen('T'))
+    for i, combo in enumerate(combos, start=1):
+        print('{:4}: {}'.format(i, ' - '.join(combo)))
+
+
+if __name__ == '__main__':
+    main()

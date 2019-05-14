@@ -4,18 +4,25 @@
 import sys
 import os
 
-args = sys.argv[1:]
-if len(args) != 1:
-    print('Usage: {} FILE'.format(os.path.basename(sys.argv[0])))
-    sys.exit(1)
 
-file = args[0]
-if not os.path.isfile(file):
-    print('"{}" is not a file'.format(file))
-    sys.exit(1)
+def main():
+    """main"""
+    args = sys.argv[1:]
+    if len(args) != 1:
+        print('Usage: {} FILE'.format(os.path.basename(sys.argv[0])))
+        sys.exit(1)
 
-lines = open(file).readlines()
-lines.reverse()
+    file = args[0]
+    if not os.path.isfile(file):
+        print('"{}" is not a file'.format(file))
+        sys.exit(1)
 
-for line in lines:
-    print(line, end='')
+    lines = open(file).readlines()
+    lines.reverse()
+
+    for line in lines:
+        print(line, end='')
+
+
+if __name__ == '__main__':
+    main()

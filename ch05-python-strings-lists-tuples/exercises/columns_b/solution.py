@@ -19,7 +19,7 @@ def main():
 
     word_lengths = map(len, words)
     longest_word = max(word_lengths)
-    longest_num  = len(str(longest_word))
+    longest_num = len(str(longest_word))
 
     if longest_word < 4:
         longest_word = 4

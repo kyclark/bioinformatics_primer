@@ -8,8 +8,6 @@ Purpose: Calculate GC content
 import argparse
 import os
 import sys
-from Bio import SeqIO
-from collections import Counter
 
 
 # --------------------------------------------------

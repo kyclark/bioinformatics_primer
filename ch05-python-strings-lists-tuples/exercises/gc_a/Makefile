@@ -1,10 +1,7 @@
-.PHONY: doc test data
+.PHONY: pdf test
 
-data:
-	wget ftp://ftp.imicrobe.us/biosys-analytics/exercises/unclustered-proteins.tgz
-
-doc:
+pdf:
 	pandoc README.md -o README.pdf
 
 test:
-	python3 -m pytest -v test.py
+	pytest -v test.py

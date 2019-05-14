@@ -1,7 +1,8 @@
+# Introduction to Python
+
 > “Any fool can write code that a computer can understand. Good programmers write code that humans can understand.” - Martin Fowler
 
-
-## Hello
+# Hello
 
 Let's use our familiar "Hello, World!" to get started:
 
@@ -14,7 +15,7 @@ $ cat -n hello.py
 
 The first thing to notice is the "shebang" on line 1. I'm going to use `env` to find the first `python3` binary in the user's `$PATH`. In `bash`, we could use either `echo` or `printf` to print to the terminal (or a file). In Python, we have `print()` noting that we must use parentheses now to invoke functions. 
 
-## Variables
+# Variables
 
 It's not so interesting to just say "Hello, World!" all the time. Let's make a program that will say "hello" to some value that we pass in. This value can change each time we run the program, so it's common to call this a "variable."
 
@@ -54,7 +55,7 @@ We could to use the `+` operator to concatenate it to the literal string "Hello,
 Hello, Duderino
 ````
 
-## Types: Strings and Numbers
+# Types: Strings and Numbers
 
 As you might expect, the "plus" operator `+` is also used to perform numeric addition:
 
@@ -98,7 +99,7 @@ Traceback (most recent call last):
 TypeError: unsupported operand type(s) for +: 'int' and 'str'
 ````
 
-## Lists
+# Lists
 
 Before we go further, I will introduce a different variable type called a "list" as we are going to need that immediately. You create a list by putting values in `[]` (square brackets or just "brackets"):
 
@@ -126,7 +127,7 @@ But note that, like so many other languages, Python starts counting at `0`, so t
 
 We'll talk much more about lists in the next chapter. I needed to tell you that so I could tell you this next bit.
 
-## Command-line Arguments: sys.argv is a list
+# Command-line Arguments: sys.argv is a list
 
 Now let's get our "hello" program to greet an argument passed from the command line. We discussed in the `bash` section that programs can take *positional* arguments, e.g. `ls` can accept the name of the directory you wish to list or `wc` can take the name of a file to count. *Positional* arguments mean the first argument, the second argument, and so on. In the command `ls ~`, the `~` (tilde which means `$HOME` in `bash`) is the one and only positional argument. In the command `ls /bin /usr/bin/`, there are two positional arguments, `/bin` and `/usr/bin/`.
 
@@ -231,7 +232,7 @@ $ ./hello_arg3.py Neil
 Hello, Neil!
 ````
 
-## The main() thing
+# The main() thing
 
 Many languages (e.g., Perl, Rust, Haskell) have the idea of a `main` module/function where all the processing starts. If you define a `main` function using `def main`, most people reading your code would understand that the program *ought* to begin there. (I say "ought" because Python won't actually make that happen. You still have to *call* the `main` function to make your program run!) I usually put my `main` first and then call it at the end of the script with this `__name__ == '__main__'` business. This looks a bit of a hack, but it is fairly Pythonic.
 
@@ -262,7 +263,7 @@ $ ./hello_arg4.py '2013 Rock and Roll Hall of Fame Inductees'
 Hello, 2013 Rock and Roll Hall of Fame Inductees!
 ````
 
-## Function Order
+# Function Order
 
 Note that you cannot put call to `main()` before `def main` because you cannot call a function that hasn't been defined (lexically) in the program yet. To add insult to injury, this is a **run-time error** -- meaning the mistake isn't caught by the compiler when the program is parsed into byte-code; instead the program just crashes.
 
@@ -302,7 +303,7 @@ This is foo
 Ending the program
 ````
 
-## Handle All The Args!
+# Handle All The Args!
 
 If we like, we can greet to any number of arguments:
 
@@ -333,7 +334,7 @@ Hello, Geddy, Alex, Neil!
 
 Notice on line 14 to see how we can `join` all the arguments on a comma + space.
 
-## Conditionals
+# Conditionals
 
 So far we've been using an `if` condition to see if we have enough arguments. If you want to test for more than one condition, you can use `elif` (else if) and `else` ("otherwise" or the "default" branch if all others fail). Here we'll use the `input` function to present the user with a prompt and get their input:
 
@@ -387,7 +388,7 @@ ValueError: invalid literal for int() with base 10: 'Ageless'
 
 Later we'll talk about how to avoid problems like this.
 
-## Looping Over Lists
+# Loops
 
 As in bash, we can use `for` loops in Python. Here's another way to greet all the people:
 
@@ -478,7 +479,7 @@ from a file.
 
 The last example either needs to suppress the newline from `print` or do `rstrip()` on the line to remove it as the text coming from the file has a newline.
 
-## Stubbing new programs
+# Stubbing New Programs with new_py.py
 
 Every program we've seen so far has had the same basic structure:
 
@@ -549,7 +550,7 @@ Will not overwrite. Bye!
 
 Unless you answer "y", the script will not be overwritten. You could also use the `-f|--force` flag to force the overwritting of an existing file. 
 
-## Introducing argparse
+# Introducing argparse
 
 Run `new_py.py` with `-h` or `--help` to see all the options:
 
@@ -677,12 +678,12 @@ In my experience, perhaps 20-50% of the effort to solve most of the exercises ca
 >>> help(argparse)
 ````
 
-## Exercises
+# Exercises
 
 Now is the time for you to write your own programs. Go into the `exercises` directory and solve `hello_a`. The way you are intended to work is to read the README, then use `new_py.py` to stub out the named program, then use `make test` to pass the tests. 
 
 
-### Exercise: hello
+## Exercise: hello
 
 If you `ls` the directory, you should see something like this:
 
@@ -826,7 +827,7 @@ Now when given the arguments "Mike" and "Carol", we need to fix the greeting. Wh
 
 For what it's worth, this is the idea of "Test-Driven Development" which you can read about on the Internet.
 
-### Exercise: article.py
+## Exercise: article.py
 
 Make a Python program called `article.py` that prepends before the given "word" (it may not really be a word) the article "a" if the word begins with a consonant or "an" if it begins with a vowel. If given no arguments, the program should provide a usage statement.
 

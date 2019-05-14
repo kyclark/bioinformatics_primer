@@ -4,21 +4,30 @@
 import sys
 import os
 
-args = sys.argv[1:]
 
-if len(args) != 1:
-    print('Usage: {} FILE'.format(os.path.basename(sys.argv[0])))
-    sys.exit(1)
+def main():
+    """main"""
+    args = sys.argv[1:]
+    min_length = 3
 
-file = args[0]
+    if len(args) != 1:
+        print('Usage: {} FILE'.format(os.path.basename(sys.argv[0])))
+        sys.exit(1)
 
-if not os.path.isfile(file):
-    print('"{}" is not a file'.format(file))
-    sys.exit(1)
+    file = args[0]
 
-for line in open(file):
-    for word in line.lower().split():
-        if len(word) > 2:
-            rev = ''.join(reversed(word))
-            if rev == word:
-                print(word)
+    if not os.path.isfile(file):
+        print('"{}" is not a file'.format(file))
+        sys.exit(1)
+
+    for line in open(file):
+        for word in line.lower().split():
+            # skip short words
+            if len(word) >= min_length:
+                rev = ''.join(reversed(word))
+                if rev == word:
+                    print(word)
+
+
+if __name__ == '__main__':
+    main()

@@ -2,7 +2,7 @@
 
 Here are some tasks that will introduce how the commands from the previous chapter can be combined to get things done. Sometimes you can get exactly what you need with command-line tools and never need to write a program. Here I show you output on my system, and I encourage you to type (do not copy and paste!) the commands on your system to compare. Note that we are likely to be using different versions of a Unix-like OS, so the implementations of commands like `ls` or `sed` might differ by output or arguments. Be sure to consult your manpage and versions to understand any differences you see.
 
-## Find the number of unique users on a shared system
+# Find the number of unique users on a shared system
 
 We know that `w` will tell us the users logged in. Try it now on a system that has many users (i.e., not your laptop) and see the output. Likely there are dozens of users, so we'll connect the output of `w` to `head` using a pipe `|` so that we only see the first five lines:
 
@@ -102,7 +102,7 @@ NB: Sometimes a program will complain about things that you cannot fix, e.g., `f
 $ find / -name my-file.txt 2>/dev/null
 ````
 
-## Count "oo" words
+# Count "oo" words
 
 On almost every Unix system, you can find `/usr/share/dict/words`.  Let's use `grep` to find how many have the "oo" vowel combination. It's a long list, so I'll pipe it into "head" to see just the first five:
 
@@ -320,7 +320,7 @@ $ wc -l clustered-ids.o unclustered-ids.o
 $ wc -l protein-ids.o
 220520 protein-ids.o
 ````
-## Gapminder
+# Gapminder
 
 For this exercise, look in the `biosys-analytics/data/gapminder` directory.
 

@@ -1,12 +1,6 @@
 # Grid
 
-Write a Python program called `grid.py` that will create a square grid from the argument given on the command line. 
-
-* The program will expect one positional argument; if the number of arguments is not exactly one, print a "usage" statement and exit *with an error code*.
-* The test suite will only provide integer values, so you can assume it is safe to use `int` to convert the input from a string to an integer.
-* The number provided must be in the range of 2 to 9 (inclusive). If it is not, print "NUM (<the number>) must be between 1 and 9" and exit *with an error code*.
-* You will square the given number to create a grid (so think of the number as how many rows and columns).
-* Your grids will look like the below. 
+Write a Python program called `grid.py` that will create a square grid from the argument given on the command line. The program will expect one positional argument; if the number of arguments is not exactly one, print a "usage" statement and exit *with an error code*. The test suite will only provide integer values, so you can assume it is safe to use `int` to convert the input from a string to an integer. The number provided must be in the range of 2 to 9 (inclusive). If it is not, print "NUM (<the number>) must be between 1 and 9" and exit *with an error code*. You will square the given number to create a grid (so think of the number as how many rows and columns).
 
 # Expected Behavior
 

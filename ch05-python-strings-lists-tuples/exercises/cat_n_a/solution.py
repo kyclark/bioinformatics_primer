@@ -17,15 +17,16 @@ def main():
         print('Usage: {} FILE'.format(os.path.basename(sys.argv[0])))
         sys.exit(1)
 
-    filename = args[0]
+    file = args[0]
 
-    if not os.path.isfile(filename):
-        print('{} is not a file'.format(filename))
+    if not os.path.isfile(file):
+        print('{} is not a file'.format(file))
         sys.exit(1)
 
-    for i, line in enumerate(open(filename)):
-        print('{:5}: {}'.format(i+1, line), end='')
+    for i, line in enumerate(open(file), start=1):
+        print('{:5}: {}'.format(i, line), end='')
 
 
 # --------------------------------------------------
-main()
+if __name__ == '__main__':
+    main()

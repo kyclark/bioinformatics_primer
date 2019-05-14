@@ -1,28 +1,46 @@
 #!/usr/bin/env python3
 """tests for hello.py"""
 
-from subprocess import getstatusoutput, getoutput
-import os.path
-import re
+from subprocess import getstatusoutput
+import os
 
 prg = './hello.py'
 
 
+# --------------------------------------------------
 def test_usage():
     """usage"""
-    (retval, out) = getstatusoutput(prg)
-    assert retval > 0
-    assert re.match("usage", out, re.IGNORECASE)
+    rv, out = getstatusoutput(prg)
+    assert rv > 0
+    assert out.lower().startswith('usage')
 
 
-def test_runs():
+# --------------------------------------------------
+def test_01():
     """runs hello"""
-    out1 = getoutput(prg + ' Alice')
-    assert out1.rstrip() == 'Hello to the 1 of you: Alice!'
 
-    out2 = getoutput(prg + ' Mike Carol')
-    assert out2.rstrip() == 'Hello to the 2 of you: Mike and Carol!'
+    rv, out = getstatusoutput('{} {}'.format(prg, 'Alice'))
+    assert rv == 0
+    assert out.rstrip() == 'Hello to the 1 of you: Alice!'
 
-    out3 = getoutput(prg + ' Greg Peter Bobby Marcia Jane Cindy')
-    assert out3.rstrip(
-    ) == 'Hello to the 6 of you: Greg, Peter, Bobby, Marcia, Jane, and Cindy!'
+
+# --------------------------------------------------
+def test_02():
+    """runs hello"""
+
+    rv, out = getstatusoutput('{} {}'.format(prg, ' Mike Carol'))
+    assert rv == 0
+    assert out.rstrip() == 'Hello to the 2 of you: Mike and Carol!'
+
+
+# --------------------------------------------------
+def test_03():
+    """runs hello"""
+
+    names = ' Greg Peter Bobby Marcia Jane Cindy'
+    rv, out = getstatusoutput('{} {}'.format(prg, names))
+
+    assert rv == 0
+    expected = ('Hello to the 6 of you: Greg, Peter, Bobby, '
+                'Marcia, Jane, and Cindy!')
+    assert out.rstrip() == expected

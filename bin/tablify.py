@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Author : kyclark
+Author : Ken Youens-Clark <kyclark@gmail.com>
 Date   : 2019-05-09
 Purpose: Diplay delimited text files as ASCII tables
 """

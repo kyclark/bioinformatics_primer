@@ -6,7 +6,9 @@ Purpose: Rock the Casbah
 """
 
 import argparse
+import re
 import sys
+from itertools import product
 
 
 # --------------------------------------------------
@@ -16,7 +18,7 @@ def get_args():
         description='Argparse Python script',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('plate', metavar='str', help='License plate')
+    parser.add_argument('plate', metavar='PLATE', help='License plate')
 
     # parser.add_argument(
     #     '-a',
@@ -58,18 +60,25 @@ def main():
     """Make a jazz noise here"""
     args = get_args()
     plate = args.plate
+    print('plate = "{}"'.format(plate))
     mixups = [('5', 'S'), ('X', 'K'), ('1', 'I'), ('3', 'E'), ('0', 'O', 'Q'),
               ('M', 'N'), ('U', 'V', 'W'), ('2', '7')]
 
-    regex = []
+    chars = []
     for char in plate:
         group = list(filter(lambda t: char in t, mixups))
         if group:
-            regex.append('[' + ''.join(group[0]) + ']')
+            chars.append(group[0])
         else:
-            regex.append(char)
+            chars.append((char, ))
 
-    print('^{}$'.format(''.join(regex)))
+    regex = '^{}$'.format(''.join(
+        map(lambda t: '[' + ''.join(t) + ']' if len(t) > 1 else t[0], chars)))
+    print('regex = "{}"'.format(regex))
+
+    for possible in sorted(product(*chars)):
+        s = ''.join(possible)
+        print(s, 'OK' if re.search(regex, s) else 'NO')
 
 
 # --------------------------------------------------

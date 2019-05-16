@@ -2,7 +2,7 @@
 """
 Author : kyclark
 Date   : 2019-05-16
-Purpose: Fetch PubMed info
+Purpose: Fetch PubMed info, cf. http://www.ncbi.nlm.nih.gov/books/NBK25499/
 """
 
 import argparse

@@ -1,0 +1,2 @@
+DEBUG:root:beginnings = defaultdict(<class 'list'>, {'AAA': ['Rosalind_0498', 'Rosalind_2391', 'Rosalind_0442'], 'TTT': ['Rosalind_2323'], 'GGG': ['Rosalind_5013']})
+DEBUG:root:ends = defaultdict(<class 'list'>, {'AAA': ['Rosalind_0498'], 'TTT': ['Rosalind_2391'], 'CCC': ['Rosalind_2323', 'Rosalind_0442'], 'GGG': ['Rosalind_5013']})

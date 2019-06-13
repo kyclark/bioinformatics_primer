@@ -1,0 +1,8 @@
+argparse
+parsing-csv
+bash-common-patterns
+python-common-patterns
+logging
+testing
+regular-expressions
+functional-programming

@@ -1,0 +1,3 @@
+select sample_id, sample_name, latitude_start as latitude, 
+       longitude_start as longitude, depth
+from   sample

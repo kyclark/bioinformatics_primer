@@ -1,0 +1,100 @@
+kegg_id	count	name	definition	pathway	module
+K00857	37	tdk, TK	thymidine kinase [EC:2.7.1.21]	ko00240  Pyrimidine metabolism	
+K16491	35	STARD9	StAR-related lipid transfer protein 9		
+K03995	22	C6	complement component 6	ko04610  Complement and coagulation cascades	
+K03555	15	mutS	DNA mismatch repair protein MutS	ko03430  Mismatch repair	
+K03631	14	recN	DNA repair protein RecN (Recombination protein N)		
+K11755	14	hisIE	phosphoribosyl-ATP pyrophosphohydrolase / phosphoribosyl-AMP cyclohydrolase [EC:3.6.1.31 3.5.4.19]	ko00340  Histidine metabolism	M00026  Histidine biosynthesis, PRPP => histidine
+K00728	14	POMT	dolichyl-phosphate-mannose-protein mannosyltransferase [EC:2.4.1.109]	ko00514  Other types of O-glycan biosynthesis	
+K13190	14	RBM15	RNA-binding protein 15		
+K10433	14	MAP7	microtubule-associated protein 7		
+K03076	4	secY	preprotein translocase subunit SecY	ko02024  Quorum sensing	M00335  Sec (secretion) system
+K01256	4	pepN	aminopeptidase N [EC:3.4.11.2]	ko00480  Glutathione metabolism	
+K16785	4	ecfT	energy-coupling factor transport system permease protein	ko02010  ABC transporters	M00582  Energy-coupling factor transport system
+K06941	3	rlmN	23S rRNA (adenine2503-C2)-methyltransferase [EC:2.1.1.192]		
+K15616	3	EYA1	eyes absent homolog 1 [EC:3.1.3.48]	ko05202  Transcriptional misregulation in cancer	
+K02649	3	PIK3R1_2_3	phosphoinositide-3-kinase regulatory subunit alpha/beta/delta	ko01521  EGFR tyrosine kinase inhibitor resistance	M00676  PI3K-Akt signaling
+K04561	3	norB	nitric oxide reductase subunit B [EC:1.7.2.5]	ko00910  Nitrogen metabolism	M00529  Denitrification, nitrate => nitrogen
+K02031	2	ABC.PE.A	peptide/nickel transport system ATP-binding protein	ko02024  Quorum sensing	M00239  Peptides/nickel transport system
+K02032	2	ABC.PE.A1	peptide/nickel transport system ATP-binding protein	ko02024  Quorum sensing	M00239  Peptides/nickel transport system
+K13896	2	yejF	microcin C transport system ATP-binding protein	ko02010  ABC transporters	M00349  Microcin C transport system
+K01872	2	AARS, alaS	alanyl-tRNA synthetase [EC:6.1.1.7]	ko00970  Aminoacyl-tRNA biosynthesis	M00359  Aminoacyl-tRNA biosynthesis, eukaryotes
+K15437	2	AIMP1, ARC1	aminoacyl tRNA synthase complex-interacting multifunctional protein 1		
+K10442	2	KLHL1_4_5	kelch-like protein 1/4/5		
+K13917	2	RNGTT	mRNA-capping enzyme [EC:2.7.7.50 3.6.1.-]	ko03015  mRNA surveillance pathway	
+K15583	2	oppD	oligopeptide transport system ATP-binding protein	ko01501  beta-Lactam resistance	M00439  Oligopeptide transport system
+K06237	2	COL4A	collagen, type IV, alpha	ko04151  PI3K-Akt signaling pathway	
+K01044	2	CES1	carboxylesterase 1 [EC:3.1.1.1]	ko00983  Drug metabolism - other enzymes	
+K04963	2	RYR3	ryanodine receptor 3	ko04020  Calcium signaling pathway	
+K11016	2	shlA, hhdA, hpmA	hemolysin	ko03070  Bacterial secretion system	
+K02049	1	ABC.SN.A	NitT/TauT family transport system ATP-binding protein		M00188  NitT/TauT family transport system
+K02050	1	ABC.SN.P	NitT/TauT family transport system permease protein		M00188  NitT/TauT family transport system
+K03406	1	mcp	methyl-accepting chemotaxis protein	ko02020  Two-component system	
+K02014	1	TC.FEV.OM	iron complex outermembrane recepter protein		
+K00681	1	ggt	gamma-glutamyltranspeptidase / glutathione hydrolase [EC:2.3.2.2 3.4.19.13]	ko00430  Taurine and hypotaurine metabolism	
+K00525	1	E1.17.4.1A, nrdA, nrdE	ribonucleoside-diphosphate reductase alpha chain [EC:1.17.4.1]	ko00230  Purine metabolism	M00053  Pyrimidine deoxyribonuleotide biosynthesis, CDP/CTP => dCDP/dCTP,dTDP/dTTP
+K01995	1	livG	branched-chain amino acid transport system ATP-binding protein	ko02010  ABC transporters	M00237  Branched-chain amino acid transport system
+K03588	1	ftsW, spoVE	cell division protein FtsW	ko04112  Cell cycle - Caulobacter	
+K07399	1	resB, ccs1	cytochrome c biogenesis protein		
+K01792	1	E5.1.3.15	glucose-6-phosphate 1-epimerase [EC:5.1.3.15]	ko00010  Glycolysis / Gluconeogenesis	
+K07114	1	yfbK	Ca-activated chloride channel homolog		
+K01696	1	trpB	tryptophan synthase beta chain [EC:4.2.1.20]	ko00260  Glycine, serine and threonine metabolism	M00023  Tryptophan biosynthesis, chorismate => tryptophan
+K03686	1	dnaJ	molecular chaperone DnaJ		
+K04043	1	dnaK, HSPA9	molecular chaperone DnaK	ko03018  RNA degradation	
+K01937	1	pyrG, CTPS	CTP synthase [EC:6.3.4.2]	ko00240  Pyrimidine metabolism	M00052  Pyrimidine ribonucleotide biosynthesis, UMP => UDP/UTP,CDP/CTP
+K02621	1	parC	topoisomerase IV subunit A [EC:5.99.1.-]		
+K01892	1	HARS, hisS	histidyl-tRNA synthetase [EC:6.1.1.21]	ko00970  Aminoacyl-tRNA biosynthesis	M00359  Aminoacyl-tRNA biosynthesis, eukaryotes
+K01915	1	glnA, GLUL	glutamine synthetase [EC:6.3.1.2]	ko00220  Arginine biosynthesis	
+K00951	1	relA	GTP pyrophosphokinase [EC:2.7.6.5]	ko00230  Purine metabolism	
+K00075	1	murB	UDP-N-acetylmuramate dehydrogenase [EC:1.3.1.98]	ko00520  Amino sugar and nucleotide sugar metabolism	
+K03657	1	uvrD, pcrA	DNA helicase II / ATP-dependent DNA helicase PcrA [EC:3.6.4.12]	ko03420  Nucleotide excision repair	
+K04517	1	tyrA2	prephenate dehydrogenase [EC:1.3.1.12]	ko00400  Phenylalanine, tyrosine and tryptophan biosynthesis	M00025  Tyrosine biosynthesis, chorismate => tyrosine
+K02469	1	gyrA	DNA gyrase subunit A [EC:5.99.1.3]		
+K00382	1	DLD, lpd, pdhD	dihydrolipoamide dehydrogenase [EC:1.8.1.4]	ko00010  Glycolysis / Gluconeogenesis	M00009  Citrate cycle (TCA cycle, Krebs cycle)
+K02437	1	gcvH, GCSH	glycine cleavage system H protein	ko00260  Glycine, serine and threonine metabolism	M00532  Photorespiration
+K03529	1	smc	chromosome segregation protein		
+K00140	1	mmsA, iolA, ALDH6A1	malonate-semialdehyde dehydrogenase (acetylating) / methylmalonate-semialdehyde dehydrogenase [EC:1.2.1.18 1.2.1.27]	ko00280  Valine, leucine and isoleucine degradation	M00013  Malonate semialdehyde pathway, propanoyl-CoA => acetyl-CoA
+K02071	1	metN	D-methionine transport system ATP-binding protein	ko02010  ABC transporters	M00238  D-Methionine transport system
+K02027	1	ABC.MS.S	multiple sugar transport system substrate-binding protein		M00207  Putative multiple sugar transport system
+K00239	1	sdhA, frdA	succinate dehydrogenase / fumarate reductase, flavoprotein subunit [EC:1.3.5.1 1.3.5.4]	ko00020  Citrate cycle (TCA cycle)	M00009  Citrate cycle (TCA cycle, Krebs cycle)
+K00950	1	folK	2-amino-4-hydroxy-6-hydroxymethyldihydropteridine diphosphokinase [EC:2.7.6.3]	ko00790  Folate biosynthesis	M00126  Tetrahydrofolate biosynthesis, GTP => THF
+K06894	1	K06894	uncharacterized protein		
+K07478	1	ycaJ	putative ATPase		
+K02492	1	hemA	glutamyl-tRNA reductase [EC:1.2.1.70]	ko00860  Porphyrin and chlorophyll metabolism	M00121  Heme biosynthesis, glutamate => protoheme/siroheme
+K02888	1	RP-L21, MRPL21, rplU	large subunit ribosomal protein L21	ko03010  Ribosome	M00178  Ribosome, bacteria
+K03593	1	mrp, NUBPL	ATP-binding protein involved in chromosome partitioning		
+K03701	1	uvrA	excinuclease ABC subunit A	ko03420  Nucleotide excision repair	
+K02397	1	flgL	flagellar hook-associated protein 3 FlgL	ko02040  Flagellar assembly	
+K01768	1	E4.6.1.1	adenylate cyclase [EC:4.6.1.1]	ko00230  Purine metabolism	M00695  cAMP signaling
+K01174	1	nuc	micrococcal nuclease [EC:3.1.31.1]		
+K09817	1	znuC	zinc transport system ATP-binding protein [EC:3.6.3.-]	ko02010  ABC transporters	M00242  Zinc transport system
+K06902	1	UMF1	MFS transporter, UMF1 family	ko04138  Autophagy - yeast	
+K07192	1	FLOT	flotillin	ko04910  Insulin signaling pathway	
+K03857	1	PIGA, GPI3	phosphatidylinositol glycan, class A [EC:2.4.1.198]	ko00563  Glycosylphosphatidylinositol (GPI)-anchor biosynthesis	M00065  GPI-anchor biosynthesis, core oligosaccharide
+K06841	1	SEMA5	semaphorin 5	ko04360  Axon guidance	
+K04955	1	HCN2	hyperpolarization activated cyclic nucleotide-gated potassium channel 2	ko04024  cAMP signaling pathway	
+K06225	1	PTCH1	patched 1	ko04024  cAMP signaling pathway	M00678  Hedgehog signaling
+K03762	1	proP	MFS transporter, MHS family, proline/betaine transporter		
+K00383	1	GSR, gor	glutathione reductase (NADPH) [EC:1.8.1.7]	ko00480  Glutathione metabolism	
+K03891	1	qcrB	ubiquinol-cytochrome c reductase cytochrome b subunit	ko00190  Oxidative phosphorylation	M00151  Cytochrome bc1 complex respiratory unit
+K11071	1	potB	spermidine/putrescine transport system permease protein	ko02010  ABC transporters	M00299  Spermidine/putrescine transport system
+K01654	1	E2.5.1.56, neuB	N-acetylneuraminate synthase [EC:2.5.1.56]	ko00520  Amino sugar and nucleotide sugar metabolism	
+K02804	1	PTS-Nag-EIIC, nagE	PTS system, N-acetylglucosamine-specific IIC component	ko00520  Amino sugar and nucleotide sugar metabolism	M00267  PTS system, N-acetylglucosamine-specific II component
+K01635	1	lacD	tagatose 1,6-diphosphate aldolase [EC:4.1.2.40]	ko00052  Galactose metabolism	
+K03204	1	virB9, lvhB9	type IV secretion system protein VirB9	ko03070  Bacterial secretion system	M00333  Type IV secretion system
+K06904	1	K06904	uncharacterized protein		
+K04477	1	ycdX	putative hydrolase		
+K06907	1	K06907	uncharacterized protein		
+K04483	1	radA	DNA repair protein RadA		
+K07120	1	K07120	uncharacterized protein		
+K07798	1	cusB, silB	membrane fusion protein, Cu(I)/Ag(I) efflux system	ko02020  Two-component system	
+K04667	1	INHB	inhibin, beta	ko04350  TGF-beta signaling pathway	M00681  Activin signaling
+K04954	1	HCN1	hyperpolarization activated cyclic nucleotide-gated potassium channel 1		
+K05455	1	NRG1	neuregulin 1	ko01521  EGFR tyrosine kinase inhibitor resistance	
+K06525	1	ITGB4, CD104	integrin beta 4	ko04151  PI3K-Akt signaling pathway	
+K04957	1	HCN4	hyperpolarization activated cyclic nucleotide-gated potassium channel 4	ko04024  cAMP signaling pathway	
+K03403	1	chlH, bchH	magnesium chelatase subunit H [EC:6.6.1.1]	ko00860  Porphyrin and chlorophyll metabolism	
+K13490	1	wspE	two-component system, chemotaxis family, sensor histidine kinase and response regulator WspE	ko02020  Two-component system	M00509  WspE-WspRF (chemosensory) two-component regulatory system
+K02791	1	PTS-MalGlc-EIIC, malX	PTS system, maltose/glucose-specific IIC component	ko00010  Glycolysis / Gluconeogenesis	M00266  PTS system, maltose/glucose-specific II component
+K04956	1	HCN3	hyperpolarization activated cyclic nucleotide-gated potassium channel 3		
+K09809	1	tagF	CDP-glycerol glycerophosphotransferase [EC:2.7.8.12]		

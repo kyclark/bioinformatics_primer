@@ -1,0 +1,101 @@
+pfam_id	count	identifier	name
+PF00089	39	Trypsin	Trypsin
+PF00001	37	7tm_1	7 transmembrane receptor (rhodopsin family)
+PF02417	36	Chromate_transp	Chromate transporter
+PF06054	14	CoiA	Competence protein CoiA-like family
+PF04147	14	Nop14	Nop14-like family 
+PF03105	14	SPX	SPX domain
+PF03936	14	Terpene_synth_C	Terpene synthase family, metal binding domain
+PF01131	14	Topoisom_bac	DNA topoisomerase
+PF00443	14	UCH	Ubiquitin carboxyl-terminal hydrolase
+PF13599	8	Pentapeptide_4	Pentapeptide repeats (9 copies)
+PF00005	4	ABC_tran	ABC transporter
+PF00501	4	AMP-binding	AMP-binding enzyme
+PF02361	4	CbiQ	Cobalt transport protein
+PF13795	4	HupE_UreJ_2	HupE / UreJ protein
+PF00344	4	SecY	SecY translocase
+PF01391	3	Collagen	Collagen triple helix repeat (20 copies)
+PF00115	3	COX1	Cytochrome C and Quinol oxidase polypeptide I
+PF11292	3	DUF3093	Protein of unknown function (DUF3093)
+PF00061	3	Lipocalin	Lipocalin / cytosolic fatty-acid binding protein family
+PF02362	2	B3	B3 DNA binding domain
+PF00528	2	BPD_transp_1	Binding-protein-dependent transport system inner membrane component
+PF02272	2	DHHA1	DHHA1 domain
+PF02457	2	DisA_N	DisA bacterial checkpoint controller nucleotide-binding
+PF06378	2	DUF1071	Protein of unknown function (DUF1071)
+PF09195	2	Endonuc-BglII	Restriction endonuclease BglII
+PF07690	2	MFS_1	Major Facilitator Superfamily
+PF03309	2	Pan_kinase	Type III pantothenate kinase
+PF14765	2	PS-DH	Polyketide synthase dehydratase
+PF00638	2	Ran_BP1	RanBP1 domain
+PF00072	2	Response_reg	Response regulator receiver domain
+PF03354	2	Terminase_1	Phage Terminase 
+PF03237	2	Terminase_6	Terminase-like family
+PF01588	2	tRNA_bind	Putative tRNA binding domain
+PF07724	1	AAA_2	AAA domain (Cdc48 subfamily)
+PF02770	1	Acyl-CoA_dh_M	Acyl-CoA dehydrogenase, middle domain
+PF00171	1	Aldedh	Aldehyde dehydrogenase family
+PF01263	1	Aldose_epim	Aldose 1-epimerase
+PF05145	1	AbrB	Transition state regulatory protein AbrB
+PF11700	1	ATG22	Vacuole effluxer Atg22 like
+PF13862	1	BCIP	p21-C-terminal region-binding protein
+PF00144	1	Beta-lactamase	Beta-lactamase
+PF00571	1	CBS	CBS domain
+PF02514	1	CobN-Mg_chel	CobN/Magnesium Chelatase
+PF01526	1	DDE_Tnp_Tn3	Tn3 transposase DDE domain
+PF01791	1	DeoC	DeoC/LacD family aldolase
+PF05497	1	Destabilase	Destabilase
+PF01965	1	DJ-1_PfpI	DJ-1/PfpI family
+PF01556	1	DnaJ_C	DnaJ C terminal domain
+PF00521	1	DNA_topoisoIV	DNA gyrase/topoisomerase IV, subunit A
+PF07237	1	DUF1428	Protein of unknown function (DUF1428)
+PF09967	1	DUF2201	VWA-like domain (DUF2201)
+PF11753	1	DUF3310	Protein of unknwon function (DUF3310)
+PF03988	1	DUF347	Repeat of Unknown Function (DUF347) 
+PF13204	1	DUF4038	Protein of unknown function (DUF4038)
+PF06074	1	DUF935	Protein of unknown function (DUF935)
+PF00892	1	EamA	EamA-like transporter family
+PF01565	1	FAD_binding_4	FAD binding domain 
+PF01098	1	FTSW_RODA_SPOVE	Cell cycle protein
+PF01597	1	GCV_H	Glycine cleavage H-protein
+PF03951	1	Gln-synt_N	Glutamine synthetase, beta-Grasp domain
+PF00745	1	GlutR_dimer	Glutamyl-tRNAGlu reductase, dimerisation domain
+PF07068	1	Gp23	Major capsid protein Gp23
+PF01019	1	G_glu_transpept	Gamma-glutamyltranspeptidase
+PF03129	1	HGTP_anticodon	Anticodon binding domain
+PF14520	1	HHH_5	Helix-hairpin-helix domain
+PF16576	1	HlyD_D23	Barrel-sandwich domain of CusB or HlyD membrane-fusion
+PF00046	1	Homeobox	Homeobox domain
+PF01288	1	HPPK	7,8-dihydro-6-hydroxymethylpterin-pyrophosphokinase (HPPK)
+PF00520	1	Ion_trans	Ion transport protein
+PF00753	1	Lactamase_B	Metallo-beta-lactamase superfamily
+PF12850	1	Metallophos_2	Calcineurin-like phosphoesterase superfamily domain
+PF12002	1	MgsA_C	MgsA AAA+ ATPase C terminal
+PF03102	1	NeuB	NeuB family
+PF08352	1	oligo_HPY	Oligopeptide/dipeptide transporter, C-terminal region
+PF00291	1	PALP	Pyridoxal-phosphate dependent enzyme
+PF10609	1	ParA	NUBPL iron-transfer P-loop NTPase
+PF02153	1	PDH	Prephenate dehydrogenase
+PF04586	1	Peptidase_S78	Caudovirus prohead serine protease 
+PF13550	1	Phage-tail_3	Putative phage tail protein
+PF10145	1	PhageMin_Tail	Phage-related minor tail protein
+PF05065	1	Phage_capsid	Phage capsid family 
+PF04984	1	Phage_sheath_1	Phage tail sheath protein subtilisin-like domain
+PF00069	1	Pkinase	Protein kinase domain
+PF04886	1	PT	PT repeat
+PF02378	1	PTS_EIIC	Phosphotransferase system, EIIC 
+PF07992	1	Pyr_redox_2	Pyridine nucleotide-disulphide oxidoreductase
+PF05140	1	ResB	ResB-like family 
+PF02867	1	Ribonuc_red_lgC	Ribonucleotide reductase, barrel domain
+PF01547	1	SBP_bac_1	Bacterial extracellular solute-binding protein
+PF01403	1	Sema	Sema domain
+PF01488	1	Shikimate_DH	Shikimate / quinate 5-dehydrogenase
+PF02463	1	SMC_N	RecF/RecN/SMC N terminal domain
+PF00565	1	SNase	Staphylococcal nuclease homologue
+PF00176	1	SNF2_N	SNF2 family N-terminal domain
+PF00083	1	Sugar_tr	Sugar (and other) transporter
+PF03592	1	Terminase_2	Terminase small subunit 
+PF13972	1	TetR	Bacterial transcriptional repressor
+PF00440	1	TetR_N	Bacterial regulatory proteins, tetR family
+PF13361	1	UvrD_C	UvrD-like helicase C-terminal domain
+PF13519	1	VWA_2	von Willebrand factor type A domain

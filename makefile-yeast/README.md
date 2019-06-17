@@ -1,6 +1,31 @@
-# Using Makefile to Automate Yeast Analysis
+# Using a Makefile to Create Reproducible Workflows
 
-If you look at the `Makefile.orig`, you will see the targets have been provided. Copy this to start your `Makefile`:
+GNU `make` is a program we can abuse to help create documented, reproducible workflows. It's intended purpose is to create executable files from source code for languages like `c` or `c++`. This process of turning text into machine instructions is called "compiling" and is often a long and tedious process. If a source code file has not changed since the last time the program was compile, `make` will not bother compiling it again. The compiler needs to compile some files before others and then go through a complicated graph of actions to make the executable. This is a workflow, and we can create our own `Makefile` that runs shell commands rather than compiling programs. It's not how `make` was intended to be used, but it works and you'd be surprised at just how far you can go with `make` before you need to investigate more complicated solutions like `snakemake` (which is `make` mixed with Python), Pegasus, Taverna, and the more than 100 other workflow management systems.
+
+If you type `make` on the command line, it will look for a file called `Makefile` (or `makefile`) for instructions. If you look at the `Makefile.orig`, you will see that all the targets for this have been defined. 
+
+````
+$ head Makefile.orig
+.PHONY: all fasta features test clean
+
+all: clean fasta genome chr-count chr-size features gene-count verified-genes uncharacterized-genes gene-types terminated-genes
+
+clean:
+	find . \( -name \*gene\* -o -name chr-\* \) -exec rm {} \;
+
+fasta:
+	echo "Download files into \"fasta\" directory"
+````
+
+## Make Targets
+
+A "target" in a Makefile is a word starting a line followed by a colon `:` and possibly a number of commands which are all indented by a *tab* character (spaces are not allowed). If you wanted to run the `fasta` target in the file above, you'd type `make fasta` and the `echo` command would be run.
+
+If you find yourself running the same commands over and over, especially if you are scrolling up through your command history to find various encantations, you should consider creating a `Makefile` with targets, e.g., for each of the various data sets you are running.
+
+## Automating Yeast Analysis
+
+To start this exercise, copy this to start your `Makefile`:
 
 ````
 $ cp Makefile.orig Makefile

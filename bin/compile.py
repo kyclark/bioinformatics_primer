@@ -33,7 +33,7 @@ def get_args():
                         help='Output filename',
                         metavar='str',
                         type=str,
-                        default='ppds.pdf')
+                        default='bio_primer.pdf')
 
     parser.add_argument('-o',
                         '--outdir',
@@ -92,7 +92,12 @@ def main():
             fh.write(open(intro).read())
             fh.write('\n\\newpage\n\n')
 
-        for i, dir_name in enumerate(map(str.rstrip, open(chapters)), 1):
+        def read_chapters():
+            for line in open(chapters):
+                if not line.startswith('#'):
+                    yield line.rstrip()
+
+        for i, dir_name in enumerate(read_chapters(), 1):
             dir_path = os.path.join(in_dir, dir_name)
             if not os.path.isdir(dir_path):
                 die('Bad dir "{}"'.format(dir_path))

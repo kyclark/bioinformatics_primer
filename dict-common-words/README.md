@@ -1,3 +1,3 @@
-# Using Dictionaries to Count Word Frequency
+# Word Frequency with Dictionaries 
 
-
+Does not include Hamming.

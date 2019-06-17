@@ -1,3 +1,3 @@
-# Finding Longhurst Province
+# Finding Longhurst Province Using GeoJSON
 
 Using shapes

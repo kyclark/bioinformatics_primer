@@ -1,3 +1,3 @@
-# Tetranucleotide Frequency
+# Calculating Tetranucleotide Frequency
 
-The DNA problem from Rosalind.
+The `DNA` problem from Rosalind.

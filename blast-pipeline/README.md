@@ -1,3 +1,3 @@
-# BLAST Pipeline in Python
+# BLAST Pipeline
 
 Everyone needs a thneed.

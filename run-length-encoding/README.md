@@ -1,3 +1,3 @@
-# Run-Length Encoding of DNA
+# Strings: Run-Length Encoding of DNA
 
 Information content, compression, strings.

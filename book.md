@@ -5,7 +5,7 @@
 
 This book is dedicated to the students and post-docs in science who've come from the bench and now need to learn how to use the command line. In my experience, few ever get any formal training in how to write software, so I want to give you as many examples as possible of complete, command-line programs that work, have documentation, and are testable and reproducible.
 
-I got into bioinformatics by coming from the software industry and having to learn enough biology to write the code my bosses requested. I know well the feeling of being well in over your head. Even after 24 years of programming, 18 in bioinformatics, I still sometimes feel completely lost in how to write a particular piece of code. In my experience, the best help for me is working examples of code that I can copy and paste into my programs, and so that's what I'm giving you.
+I got into bioinformatics by coming from the software industry and having to learn enough biology to write the code my bosses requested. I know well the feeling of being in over your head. Even after 24 years of programming, 18 in bioinformatics, I still sometimes feel completely lost in how to write a particular piece of code. In my experience, the best help for me is working examples of code that I can copy and paste into my programs, and so that's what I'm giving you.
 
 ## Organization
 
@@ -579,9 +579,7 @@ $ make && make install
 
 When I'm in an environment with a directory I can share with my team (like the UA HPC), I'll configure the package to install into that shared space so that others can use the program. When I'm on a system like "stampede" where I cannot share with others, I'll usually install into my `$HOME/.local` or some sort of "work" directory.
 
-## More Examples
-
-### Find the number of unique users on a shared system
+## Find the number of unique users on a shared system
 
 We know that `w` will tell us the users logged in. Try it now on a system that has many users (i.e., not your laptop) and see the output. Likely there are dozens of users, so we'll connect the output of `w` to `head` using a pipe `|` so that we only see the first five lines:
 
@@ -681,7 +679,7 @@ NB: Sometimes a program will complain about things that you cannot fix, e.g., `f
 $ find / -name my-file.txt 2>/dev/null
 ````
 
-### Count "oo" words
+## Count "oo" words
 
 On almost every Unix system, you can find `/usr/share/dict/words`.  Let's use `grep` to find how many have the "oo" vowel combination. It's a long list, so I'll pipe it into "head" to see just the first five:
 
@@ -741,6 +739,164 @@ $ bc <<< 158+10302
 10460
 ````
 
+## Find unclustered protein sequences
+
+The above were somewhat contrived examples. Here's a real problem I had to solve for a labmate who wanted help finding the sequences of proteins that failed to cluster. Here is the setup:
+
+````
+$ wget ftp://ftp.imicrobe.us/biosys-analytics/exercises/unclustered-proteins.tgz
+$ tar xvf unclustered-proteins.tgz
+$ cd unclustered-proteins
+````
+
+The "README" contains our instructions:
+
+````
+The file "cdhit60.3+.clstr" contains all of the GI numbers for
+proteins that were clustered and put into hmm profiles.  The file
+"proteins.fa" contains all proteins (the header is only the GI
+number).  Extract the proteins from the "proteins.fa" file that were
+not clustered.
+````
+
+If we look at the IDs in the proteins file, we'll see they are integers:
+
+````
+$ grep '>' proteins.fa | head -5
+>388548806
+>388548807
+>388548808
+>388548809
+>388548810
+````
+
+Where can we find those protein IDs in the "cdhit60.3+.clstr" file?
+
+````
+$ head -5 cdhit60.3+.clstr
+>Cluster_5086
+0    358aa, >gi|317183610|gb|ADV... at 66.76%
+1    361aa, >gi|315661179|gb|ADU... at 70.36%
+2    118aa, >gi|375968555|gb|AFB... at 70.34%
+3    208aa, >gi|194307477|gb|ACF... at 61.54%
+````
+
+The format of the file is similar to a FASTA file where the "&gt;" sign at the left-most column identifies a cluster with the following lines showing the IDs of the sequences in the cluster.  To extract just the clustered IDs, we cannot just do `grep '>'` as we'll get both the cluster IDs and the protein IDs.
+
+````
+$ grep '>' cdhit60.3+.clstr | head -5
+>Cluster_5086
+0    358aa, >gi|317183610|gb|ADV... at 66.76%
+1    361aa, >gi|315661179|gb|ADU... at 70.36%
+2    118aa, >gi|375968555|gb|AFB... at 70.34%
+3    208aa, >gi|194307477|gb|ACF... at 61.54%
+````
+
+We'll need to use a regular expression (the `-e` for "extended" on most greps, but sometimes not required) to say that we are looking at the beginning of a line `^` for a `>`:
+
+````
+$ grep -e '^>' cdhit60.3+.clstr | head -5
+>Cluster_5086
+>Cluster_10030
+>Cluster_8374
+>Cluster_13356
+>Cluster_7732
+````
+
+and then invert that with "-v":
+
+````
+$ grep -v '^>' cdhit60.3+.clstr | head -5
+0    358aa, >gi|317183610|gb|ADV... at 66.76%
+1    361aa, >gi|315661179|gb|ADU... at 70.36%
+2    118aa, >gi|375968555|gb|AFB... at 70.34%
+3    208aa, >gi|194307477|gb|ACF... at 61.54%
+4    358aa, >gi|291292536|gb|ADD... at 68.99%
+````
+
+The integer protein IDs we want are in the third column of this output when split on whitespace.  The tool `awk` is perfect for this, and whitespace is the default split character (as opposed to `cut` which uses tabs):
+
+````
+$ grep -ve '^>' cdhit60.3+.clstr | awk '{print $3}' | head -5
+>gi|317183610|gb|ADV...
+>gi|315661179|gb|ADU...
+>gi|375968555|gb|AFB...
+>gi|194307477|gb|ACF...
+>gi|291292536|gb|ADD...
+````
+
+The protein ID is still nestled there in the second field when splitting on the vertical bar (pipe).  Again, `awk` is perfect, but we need to tell it to split on something other than the default by using the "-F" flag:
+
+````
+$ grep -ve '^>' cdhit60.3+.clstr | awk '{print $3}' | \
+  awk -F'|' '{print $2}' | head -5
+317183610
+315661179
+375968555
+194307477
+291292536
+````
+
+These are the protein IDs for those that were successfully clustered, so we need to capture these to a file which we can do with a redirect `>`. Since each protein might have been clustered more than once, so I should `sort | uniq` the list:
+
+````
+$ grep -ve '^>' cdhit60.3+.clstr | awk '{print $3}' | \
+  awk -F"|" '{print $2}' | sort | uniq > clustered-ids.o
+````
+
+The "proteins.fa" is actually a little problematic. Some of the IDs have extra information. If you `grep '^>' proteins.fa`, you will see 220K IDs scroll by, not all of which are just integers. Let's isolate those that do not look like integers.
+
+First we can remove the leading ">" from the FASTA header lines with this:
+
+````
+$ grep '^>' proteins.fa | sed "s/^>//"
+````
+
+If I can find a regular expression that matches what I want, then I can use `grep -v` to invert it to find the complement. `^\d+$` will do the trick. Let's break down that regex:
+
+````
+^ \d + $
+1 2  3 4
+````
+
+1. start of the line
+2. a digit (0-9)
+3. one or more
+4. end of the line
+
+This particular regex uses extensions introduced by the Perl programming language, so we need to use the `-P` flag. Add the `-v` to invert it:
+
+````
+$ grep -e '^>' proteins.fa | sed "s/^>//" | grep -v -P '^\d+$' | head -5
+26788002|emb|CAD19173.1| putative RNA helicase, partial [Agaricus bisporus virus X]
+26788000|emb|CAD19172.1| putative RNA helicase, partial [Agaricus bisporus virus X]
+985757046|ref|YP_009222010.1| hypothetical protein [Alternaria brassicicola fusarivirus 1]
+985757045|ref|YP_009222011.1| hypothetical protein [Alternaria brassicicola fusarivirus 1]
+985757044|ref|YP_009222009.1| polyprotein [Alternaria brassicicola fusarivirus 1]
+````
+
+Looking at the above output, we can see that it would be pretty easy to get rid of everything starting with the vertical bar, and `sed` is perfect for this. Note that we can tell `sed` to do more than one action by separating them with semicolons. Lastly, we need to ensure the IDs are sorted for the next step:
+
+````
+$ grep -e '^>' proteins.fa | sed "s/^>//; s/|.*//" | sort > protein-ids.o
+````
+
+To find the lines in "protein-ids.o" that are not in "clustered-ids.o", I can use the `comm` (common) command:
+
+````
+$ comm -23 protein-ids.o clustered-ids.o > unclustered-ids.o
+````
+
+Did we get a reasonable answer?
+
+````
+$ wc -l clustered-ids.o unclustered-ids.o
+  16257 clustered-ids.o
+ 204263 unclustered-ids.o
+ 220520 total
+$ wc -l protein-ids.o
+220520 protein-ids.o
+````
 \newpage
 
 # Chapter 2: Minimally Competent bash Scripting
@@ -1668,379 +1824,15 @@ Bad config "foo"
 ````
 
 I wouldn't recommend trying to do much more with `bash` scripting. As you get more complicated arguments and options, it's really time to move to Python where we have libraries that do the hard work of parsing out the command line.
+\newpage
+
+# Chapter 3: Bash: FASTQ-to-FASTA Converter (fq2fa)
+
+Given a list of FASTQ files or directories containing FASTQ files, convert them to FASTA using `parallel`.
 
 \newpage
 
-# Chapter 3: "Hello" in bash
-
-Create a bash script called `hello.sh` that accepts one or two arguments. If there are no arguments, it should print a "Usage" and exit *with an error code*. Your program will expect to receive a "greeting" in `$1` and possibly a name in `$2`; if there is no second argument, use "Human" as the default. If there are more than two arguments, print a "Usage" and exit *with an error code*. Print the greeting, a comma and space, the name, and an exclamation point.
-
-
-````
-$ ./hello.sh
-Usage: hello.sh GREETING [NAME]
-$ ./hello.sh That\'ll do pig
-Usage: hello.sh GREETING [NAME]
-$ ./hello.sh "That'll do" pig
-That'll do, pig!
-$ ./hello.sh "Top o' the morning"
-Top o' the morning, Human!
-$ ./hello.sh "Greetings" "Earthling"
-Greetings, Earthling!
-````
-
-
-\newpage
-
-## Solution
-
-````
-     1	#!/usr/bin/env bash
-     2	
-     3	if [[ $# -lt 1 ]] || [[ $# -gt 2 ]]; then
-     4	    printf "Usage: %s GREETING [NAME]\n" $(basename "$0")
-     5	    exit 1
-     6	fi
-     7	
-     8	GREETING=$1
-     9	NAME=${2:-Human}
-    10	
-    11	echo "$GREETING, $NAME!"
-````
-
-\newpage
-
-# Chapter 4: head.sh
-
-Write a bash script called `head.sh` that mimics the `head` utility where it will print the first few lines of a file.  The script should expect one required argument (the file) and a second optional argument of the number of lines, defaulting to 3. If are no arguments, it should print a "Usage" and exit *with an error code* Your program will expect to receive an argument in `$1` and maybe a second in `$2`. If the first argument is not a file, it should notify the user and exit *with an error code*. If the second argument is missing, use the value "3". Print the number of lines requested by the user by iterating over the lines in the file and exiting the loop appropriately. Do not use the actual `head` command!
-
-````
-$ ./head.sh
-Usage: head.sh FILE NUM
-$ ./head.sh files/issa.txt
-Selected Haiku by Issa
-
-Don’t worry, spiders,
-$ ./head.sh files/issa.txt 5
-Selected Haiku by Issa
-
-Don’t worry, spiders,
-I keep house
-casually.
-````
-
-\newpage
-
-## Solution
-
-````
-     1	#!/usr/bin/env bash
-     2	
-     3	set -u
-     4	
-     5	if [[ $# -lt 1 ]]; then
-     6	    echo "Usage: head.sh FILE NUM"
-     7	    exit 1
-     8	fi
-     9	
-    10	FILE=$1
-    11	NUM=${2:-3}
-    12	
-    13	if [[ ! -f "$FILE" ]]; then
-    14	    echo "$FILE is not a file"
-    15	    exit 1
-    16	fi
-    17	
-    18	i=0
-    19	while read -r LINE; do
-    20	    i=$((i+1))
-    21	    echo $LINE
-    22	    if [[ $i -eq $NUM ]]; then
-    23	        break
-    24	    fi
-    25	done < "$FILE"
-````
-
-\newpage
-
-# Chapter 5: cat_n.sh
-
-Write a bash program called `cat_n.sh` that mimics the behavior of `cat -n` where it will print the line number and line of an input file. If there are no arguments, it should print a "Usage" and exit *with an error code*. Your program will expect to receive an argument in `$1`. If the argument is not a file, it should notify the user and exit *with an error code*. It will iterate over the lines in the file and print the line number, a space, and the line of the file. Your output will differ from regular `cat -n` as I won't expect you to right-align the numbers. 
-
-````
-$ ./cat_n.sh
-Usage: cat-n.sh FILE
-$ ./cat_n.sh foo
-foo is not a file
-$ ./cat_n.sh files/sonnet-29.txt
-1 Sonnet 29
-2 William Shakespeare
-3
-4 When, in disgrace with fortune and men’s eyes,
-5 I all alone beweep my outcast state,
-6 And trouble deaf heaven with my bootless cries,
-7 And look upon myself and curse my fate,
-8 Wishing me like to one more rich in hope,
-9 Featured like him, like him with friends possessed,
-10 Desiring this man’s art and that man’s scope,
-11 With what I most enjoy contented least;
-12 Yet in these thoughts myself almost despising,
-13 Haply I think on thee, and then my state,
-14 (Like to the lark at break of day arising
-15 From sullen earth) sings hymns at heaven’s gate;
-16 For thy sweet love remembered such wealth brings
-17 That then I scorn to change my state with kings.
-````
-
-\newpage
-
-## Solution
-
-````
-     1	#!/usr/bin/env bash
-     2	
-     3	set -u
-     4	
-     5	if [[ $# -ne 1 ]]; then
-     6	    echo "Usage: cat-n.sh FILE"
-     7	    exit 1
-     8	fi
-     9	
-    10	FILE=$1
-    11	
-    12	if [[ ! -f "$FILE" ]]; then
-    13	    echo "$FILE is not a file"
-    14	    exit 1
-    15	fi
-    16	
-    17	i=0
-    18	while read -r LINE; do
-    19	    i=$((i+1))
-    20	    echo "$i $LINE"
-    21	done < "$FILE"
-````
-
-\newpage
-
-# Chapter 6: gap.sh 
-
-Write a bash script called `gap.sh` that will print out the files in the `gapminder` directory. Note that to be portable for testing purposes, you will need to use a **relative** path from the directory where the script lives (hint: start with `$PWD`). If there are no arguments, print out all the *basenames* of the files in sorted order. If there is an argument, treat it like a regular expression and find files where the basename matches at the beginning of the string in a case-insensitive manner and print them in sorted order. If no files are found, print a message telling the user.
-
-````
-$ ./gap.sh | head -5
-     1	Afghanistan
-     2	Albania
-     3	Algeria
-     4	Angola
-     5	Argentina
-$ ./gap.sh l
-     1	Lebanon
-     2	Lesotho
-     3	Liberia
-     4	Libya
-$ ./gap.sh [w-z]
-     1	West_Bank_and_Gaza
-     2	Yemen_Rep
-     3	Zambia
-     4	Zimbabwe
-$ ./gap.sh x
-There are no countries starting with "x"
-````
-
-Do `unzip gapminder.zip` to get a `gapminder` directory. 
-
-\newpage
-
-## Solution
-
-````
-     1	#!/usr/bin/env bash
-     2	
-     3	set -u
-     4	
-     5	PREFIX=${1:-"[A-Z]"}
-     6	DATA_DIR="gapminder"
-     7	FILES=$(mktemp)
-     8	
-     9	for FILE in $(find "$DATA_DIR" -type f -iname $PREFIX\*.cc.txt | sed "s/\.cc\.txt//" | sort)
-    10	do
-    11	    echo $(basename "$FILE") >> "$FILES"
-    12	done
-    13	
-    14	NUM=$(wc -l "$FILES" | awk '{print $1}')
-    15	
-    16	if [[ $NUM -eq 0 ]]; then
-    17	    echo "There are no countries starting with \"$PREFIX\""
-    18	    exit 1
-    19	else
-    20	    cat -n "$FILES"
-    21	fi
-````
-
-\newpage
-
-# Chapter 7: Find unclustered protein sequences
-
-A labmate wants help finding the sequences of proteins that failed to cluster. Here is the setup:
-
-````
-$ wget ftp://ftp.imicrobe.us/biosys-analytics/exercises/unclustered-proteins.tgz
-$ tar xvf unclustered-proteins.tgz
-$ cd unclustered-proteins
-````
-
-The "README" contains our instructions:
-
-````
-The file "cdhit60.3+.clstr" contains all of the GI numbers for
-proteins that were clustered and put into hmm profiles.  The file
-"proteins.fa" contains all proteins (the header is only the GI
-number).  Extract the proteins from the "proteins.fa" file that were
-not clustered.
-````
-
-If we look at the IDs in the proteins file, we'll see they are integers:
-
-````
-$ grep '>' proteins.fa | head -5
->388548806
->388548807
->388548808
->388548809
->388548810
-````
-
-Where can we find those protein IDs in the "cdhit60.3+.clstr" file?
-
-````
-$ head -5 cdhit60.3+.clstr
->Cluster_5086
-0    358aa, >gi|317183610|gb|ADV... at 66.76%
-1    361aa, >gi|315661179|gb|ADU... at 70.36%
-2    118aa, >gi|375968555|gb|AFB... at 70.34%
-3    208aa, >gi|194307477|gb|ACF... at 61.54%
-````
-
-The format of the file is similar to a FASTA file where the "&gt;" sign at the left-most column identifies a cluster with the following lines showing the IDs of the sequences in the cluster.  To extract just the clustered IDs, we cannot just do `grep '>'` as we'll get both the cluster IDs and the protein IDs.
-
-````
-$ grep '>' cdhit60.3+.clstr | head -5
->Cluster_5086
-0    358aa, >gi|317183610|gb|ADV... at 66.76%
-1    361aa, >gi|315661179|gb|ADU... at 70.36%
-2    118aa, >gi|375968555|gb|AFB... at 70.34%
-3    208aa, >gi|194307477|gb|ACF... at 61.54%
-````
-
-We'll need to use a regular expression (the `-e` for "extended" on most greps, but sometimes not required) to say that we are looking at the beginning of a line `^` for a `>`:
-
-````
-$ grep -e '^>' cdhit60.3+.clstr | head -5
->Cluster_5086
->Cluster_10030
->Cluster_8374
->Cluster_13356
->Cluster_7732
-````
-
-and then invert that with "-v":
-
-````
-$ grep -v '^>' cdhit60.3+.clstr | head -5
-0    358aa, >gi|317183610|gb|ADV... at 66.76%
-1    361aa, >gi|315661179|gb|ADU... at 70.36%
-2    118aa, >gi|375968555|gb|AFB... at 70.34%
-3    208aa, >gi|194307477|gb|ACF... at 61.54%
-4    358aa, >gi|291292536|gb|ADD... at 68.99%
-````
-
-The integer protein IDs we want are in the third column of this output when split on whitespace.  The tool `awk` is perfect for this, and whitespace is the default split character (as opposed to `cut` which uses tabs):
-
-````
-$ grep -ve '^>' cdhit60.3+.clstr | awk '{print $3}' | head -5
->gi|317183610|gb|ADV...
->gi|315661179|gb|ADU...
->gi|375968555|gb|AFB...
->gi|194307477|gb|ACF...
->gi|291292536|gb|ADD...
-````
-
-The protein ID is still nestled there in the second field when splitting on the vertical bar (pipe).  Again, `awk` is perfect, but we need to tell it to split on something other than the default by using the "-F" flag:
-
-````
-$ grep -ve '^>' cdhit60.3+.clstr | awk '{print $3}' | \
-  awk -F'|' '{print $2}' | head -5
-317183610
-315661179
-375968555
-194307477
-291292536
-````
-
-These are the protein IDs for those that were successfully clustered, so we need to capture these to a file which we can do with a redirect `>`. Since each protein might have been clustered more than once, so I should `sort | uniq` the list:
-
-````
-$ grep -ve '^>' cdhit60.3+.clstr | awk '{print $3}' | \
-  awk -F"|" '{print $2}' | sort | uniq > clustered-ids.o
-````
-
-The "proteins.fa" is actually a little problematic. Some of the IDs have extra information. If you `grep '^>' proteins.fa`, you will see 220K IDs scroll by, not all of which are just integers. Let's isolate those that do not look like integers.
-
-First we can remove the leading ">" from the FASTA header lines with this:
-
-````
-$ grep '^>' proteins.fa | sed "s/^>//"
-````
-
-If I can find a regular expression that matches what I want, then I can use `grep -v` to invert it to find the complement. `^\d+$` will do the trick. Let's break down that regex:
-
-````
-^ \d + $
-1 2  3 4
-````
-
-1. start of the line
-2. a digit (0-9)
-3. one or more
-4. end of the line
-
-This particular regex uses extensions introduced by the Perl programming language, so we need to use the `-P` flag. Add the `-v` to invert it:
-
-````
-$ grep -e '^>' proteins.fa | sed "s/^>//" | grep -v -P '^\d+$' | head -5
-26788002|emb|CAD19173.1| putative RNA helicase, partial [Agaricus bisporus virus X]
-26788000|emb|CAD19172.1| putative RNA helicase, partial [Agaricus bisporus virus X]
-985757046|ref|YP_009222010.1| hypothetical protein [Alternaria brassicicola fusarivirus 1]
-985757045|ref|YP_009222011.1| hypothetical protein [Alternaria brassicicola fusarivirus 1]
-985757044|ref|YP_009222009.1| polyprotein [Alternaria brassicicola fusarivirus 1]
-````
-
-Looking at the above output, we can see that it would be pretty easy to get rid of everything starting with the vertical bar, and `sed` is perfect for this. Note that we can tell `sed` to do more than one action by separating them with semicolons. Lastly, we need to ensure the IDs are sorted for the next step:
-
-````
-$ grep -e '^>' proteins.fa | sed "s/^>//; s/|.*//" | sort > protein-ids.o
-````
-
-To find the lines in "protein-ids.o" that are not in "clustered-ids.o", I can use the `comm` (common) command:
-
-````
-$ comm -23 protein-ids.o clustered-ids.o > unclustered-ids.o
-````
-
-Did we get a reasonable answer?
-
-````
-$ wc -l clustered-ids.o unclustered-ids.o
-  16257 clustered-ids.o
- 204263 unclustered-ids.o
- 220520 total
-$ wc -l protein-ids.o
-220520 protein-ids.o
-````
-
-\newpage
-
-# Chapter 8: BAM to FASTA (bam2fa)
+# Chapter 4: Bash: BAM to FASTA (bam2fa)
 
 Convert BAM files to FASTA
 
@@ -2102,15 +1894,34 @@ Convert BAM files to FASTA
 
 \newpage
 
-# Chapter 9: GNU Make
+# Chapter 5: Using a Makefile to Create Reproducible Workflows
 
-How can we abuse GNU `make` to reproduce commands, make basic pipelines (unclustered proteins)?
+GNU `make` is a program we can abuse to help create documented, reproducible workflows. It's intended purpose is to create executable files from source code for languages like `c` or `c++`. This process of turning text into machine instructions is called "compiling" and is often a long and tedious process. If a source code file has not changed since the last time the program was compile, `make` will not bother compiling it again. The compiler needs to compile some files before others and then go through a complicated graph of actions to make the executable. This is a workflow, and we can create our own `Makefile` that runs shell commands rather than compiling programs. It's not how `make` was intended to be used, but it works and you'd be surprised at just how far you can go with `make` before you need to investigate more complicated solutions like `snakemake` (which is `make` mixed with Python), Pegasus, Taverna, and the more than 100 other workflow management systems.
 
-\newpage
+If you type `make` on the command line, it will look for a file called `Makefile` (or `makefile`) for instructions. If you look at the `Makefile.orig`, you will see that all the targets for this have been defined. 
 
-# Chapter 10: Using Makefile to Automate Yeast Analysis
+````
+$ head Makefile.orig
+.PHONY: all fasta features test clean
 
-If you look at the `Makefile.orig`, you will see the targets have been provided. Copy this to start your `Makefile`:
+all: clean fasta genome chr-count chr-size features gene-count verified-genes uncharacterized-genes gene-types terminated-genes
+
+clean:
+	find . \( -name \*gene\* -o -name chr-\* \) -exec rm {} \;
+
+fasta:
+	echo "Download files into \"fasta\" directory"
+````
+
+## Make Targets
+
+A "target" in a Makefile is a word starting a line followed by a colon `:` and possibly a number of commands which are all indented by a *tab* character (spaces are not allowed). If you wanted to run the `fasta` target in the file above, you'd type `make fasta` and the `echo` command would be run.
+
+If you find yourself running the same commands over and over, especially if you are scrolling up through your command history to find various encantations, you should consider creating a `Makefile` with targets, e.g., for each of the various data sets you are running.
+
+## Automating Yeast Analysis
+
+To start this exercise, copy this to start your `Makefile`:
 
 ````
 $ cp Makefile.orig Makefile
@@ -2296,7 +2107,7 @@ Store the unique, sorted results of part (3) into a file named 'terminated-gene
 
 \newpage
 
-# Chapter 11: Git Basics
+# Chapter 6: Git Basics
 
 ## Source Code Management
 
@@ -2323,7 +2134,7 @@ Store the unique, sorted results of part (3) into a file named 'terminated-gene
 
 \newpage
 
-# Chapter 12: Introduction to Python
+# Chapter 7: Programming with Python
 
 > “Any fool can write code that a computer can understand. Good programmers write code that humans can understand.” - Martin Fowler
 
@@ -2922,7 +2733,67 @@ In my experience, perhaps 20-50% of the effort to solve most of the exercises ca
 
 \newpage
 
-# Chapter 13: "Hello" In Python
+# Chapter 8: Greeter: Positional Command-line Arguments
+
+Write a Python program named `hello.py` that warmly greets the names you provide.  When there are two names, join them with "and."  When there are three or more, join them on commas (INCLUDING THE OXFORD WE ARE NOT SAVAGES) and "and." If no names are supplied, print a usage.
+
+````
+$ ./hello.py
+Usage: hello.py NAME [NAME...]
+$ ./hello.py Alice
+Hello to the 1 of you: Alice!
+$ ./hello.py Mike Carol
+Hello to the 2 of you: Mike and Carol!
+$ ./hello.py Greg Peter Bobby Marcia Jane Cindy
+Hello to the 6 of you: Greg, Peter, Bobby, Marcia, Jane, and Cindy!
+````
+
+\newpage
+
+## Solution
+
+````
+     1	#!/usr/bin/env python3
+     2	"""
+     3	Author : Ken Youens-Clark <kyclark@gmail.com>
+     4	Date   : 2019-05-14
+     5	Purpose: Greet the arguments
+     6	"""
+     7	
+     8	import os
+     9	import sys
+    10	
+    11	
+    12	# --------------------------------------------------
+    13	def main():
+    14	    """main"""
+    15	    names = sys.argv[1:]
+    16	    num = len(names)
+    17	
+    18	    if num < 1:
+    19	        print('Usage: {} NAME [NAME...]'.format(os.path.basename(sys.argv[0])))
+    20	        sys.exit(1)
+    21	
+    22	    phrase = ''
+    23	    if num == 1:
+    24	        phrase = names[0]
+    25	    elif num == 2:
+    26	        phrase = '{} and {}'.format(names[0], names[1])
+    27	    else:
+    28	        last = names.pop()
+    29	        phrase = '{}, and {}'.format(', '.join(names), last)
+    30	
+    31	    print('Hello to the {} of you: {}!'.format(num, phrase))
+    32	
+    33	
+    34	# --------------------------------------------------
+    35	if __name__ == '__main__':
+    36	    main()
+````
+
+\newpage
+
+# Chapter 9: Handling Named Command-line Arguments in Python
 
 Write a Python program called `hello.py` that accepts three named arguments, `-g|--greeting` which is the greeting, `-n|--name` which is the name, and `-e|--excited` which is a flag to indicate whether to use a "!" in the output `<greeting>, <name><punctuation>`.
 
@@ -3023,165 +2894,9 @@ Good Night, Gracie!
 
 \newpage
 
-# Chapter 14: Strings, Lists, and Tuples
+# Chapter 10: Word Count (wc) in Python
 
-> "Good programming is good writing." - John Shore
-
-There's some overlap among Python's strings, lists, and tuples.  In a way, you could think of strings as lists of characters.  Many list operations work exactly the same over strings like subscripting to get a particular item. We can ask for the first (or "zeroth") element from a string:
-
-````
->>> name = 'Curly'
->>> name[0]
-'C'
-````
-
-Or from a list:
-
-````
->>> names = ['Larry', 'Moe', 'Curly', 'Shemp']
->>> names[0]
-'Larry'
-````
-
-"Slice" operations let you take a range of items. Notice that we can operate on a string literal (in quotes):
-
-````
->>> names[2:4]
-['Curly', 'Shemp']
->>> 'Curly'[2:4]
-'rl'
-````
-
-Functions like `join` that take lists can also work on strings:
-
-````
->>> ', '.join(names)
-'Larry, Moe, Curly, Shemp'
->>> ', '.join(names[0])
-'L, a, r, r, y'
-````
-
-You can ask if a list contains a certain member, and you can also ask if a string contains a certain character or substring:
-
-````
->>> 'Moe' in names
-True
->>> 'r' in 'Larry'
-True
->>> 'url' in 'Curly'
-True
->>> 'x' in 'Larry'
-False
->>> 'Joe' in names
-False
-````
-
-You can iterate with a `for` loop over both the items in a list:
-
-````
->>> names = ['Larry', 'Moe', 'Curly', 'Shemp']
->>> for name in names:
-...   print(name)
-...
-Larry
-Moe
-Curly
-Shemp
-````
-
-Or the characters in a word:
-
-````
->>> for letter in 'Curly':
-...   print(letter)
-...
-C
-u
-r
-l
-y
-````
-
-Just as in bash, we can create a counter, increment it inside our loop, and print the element number before the element:
-
-````
->>> names = ['Larry', 'Moe', 'Curly', 'Shemp']
->>> i = 0
->>> for name in names:
-...   i += 1
-...   print(i, name)
-...
-1 Larry
-2 Moe
-3 Curly
-4 Shemp
-````
-
-Because we so often want this behavior, there is a function called `enumerate` that takes a list/string and returns the index/position along with the item/character. Since it's so annoying to deal with zero-offset counting, we can tell `enumerate` to `start` at 1:
-
-````
->>> names = ['Larry', 'Moe', 'Curly', 'Shemp']
->>> for i, name in enumerate(names, start=1):
-...     print('{:3} {}'.format(i, name))
-...
-  1 Larry
-  2 Moe
-  3 Curly
-  4 Shemp
->>> for i, letter in enumerate('Curly', start=1):
-...     print('{:3} {}'.format(i, letter))
-...
-  1 C
-  2 u
-  3 r
-  4 l
-  5 y
-````
-
-You can turn a list around with the `reversed` function:
-
-````
->>> reversed(names)
-<list_reverseiterator object at 0x109e490f0>
-````
-
-What we have here is a failure to communicate. You expected to see the list of names in the reverse order, but what you got was a promise from Python to give you that list when you actually need it. In the REPL, we can use the `list` function:
-
-````
->>> list(reversed(names))
-['Shemp', 'Curly', 'Moe', 'Larry']
-````
-
-So you can also use that to reverse a word:
-
-````
->>> list(reversed('cat'))
-['t', 'a', 'c']
-````
-
-OK, well, I wanted the word "tac" and not the list of letters in "tac"! We can put them back into a word by calling the `join` *function* of the *string element* that we want to put between the letter (which is an empty string). Notice that I don't have to use `list` because the `join` function will iterate on the `reversed` result:
-
-````
->>> ''.join(reversed('cat'))
-'tac'
-````
-
-\newpage
-
-# Chapter 15: Greeter
-
-Write a Python program named `hello.py` that warmly greets the names you provide.  When there are two names, join them with "and."  When there are three or more, join them on commas (INCLUDING THE OXFORD WE ARE NOT SAVAGES) and "and." If no names are supplied, print a usage.
-
-````
-$ ./hello.py
-Usage: hello.py NAME [NAME...]
-$ ./hello.py Alice
-Hello to the 1 of you: Alice!
-$ ./hello.py Mike Carol
-Hello to the 2 of you: Mike and Carol!
-$ ./hello.py Greg Peter Bobby Marcia Jane Cindy
-Hello to the 6 of you: Greg, Peter, Bobby, Marcia, Jane, and Cindy!
-````
+Write your own implementation in Python of the `wc` program where you print lines, words, and characters contained in a file.
 
 \newpage
 
@@ -3189,52 +2904,75 @@ Hello to the 6 of you: Greg, Peter, Bobby, Marcia, Jane, and Cindy!
 
 ````
      1	#!/usr/bin/env python3
-     2	"""
-     3	Author : Ken Youens-Clark <kyclark@gmail.com>
-     4	Date   : 2019-05-14
-     5	Purpose: Greet the arguments
-     6	"""
-     7	
-     8	import os
-     9	import sys
+     2	"""Emulate wc"""
+     3	
+     4	import argparse
+     5	
+     6	
+     7	# --------------------------------------------------
+     8	def get_args():
+     9	    """Get command-line arguments"""
     10	
-    11	
-    12	# --------------------------------------------------
-    13	def main():
-    14	    """main"""
-    15	    names = sys.argv[1:]
-    16	    num = len(names)
-    17	
-    18	    if num < 1:
-    19	        print('Usage: {} NAME [NAME...]'.format(os.path.basename(sys.argv[0])))
-    20	        sys.exit(1)
-    21	
-    22	    phrase = ''
-    23	    if num == 1:
-    24	        phrase = names[0]
-    25	    elif num == 2:
-    26	        phrase = '{} and {}'.format(names[0], names[1])
-    27	    else:
-    28	        last = names.pop()
-    29	        phrase = '{}, and {}'.format(', '.join(names), last)
-    30	
-    31	    print('Hello to the {} of you: {}!'.format(num, phrase))
-    32	
-    33	
-    34	# --------------------------------------------------
-    35	if __name__ == '__main__':
-    36	    main()
+    11	    parser = argparse.ArgumentParser(
+    12	        description='Emulate wc',
+    13	        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    14	
+    15	    parser.add_argument('file',
+    16	                        metavar='FILE',
+    17	                        type=argparse.FileType('r'),
+    18	                        nargs='+',
+    19	                        help='Input file')
+    20	
+    21	    return parser.parse_args()
+    22	
+    23	
+    24	# --------------------------------------------------
+    25	def main():
+    26	    """Make a jazz noise here"""
+    27	
+    28	    args = get_args()
+    29	    for fh in args.file:
+    30	        chars, words, lines = 0, 0, 0
+    31	        for line in fh:
+    32	            lines += 1
+    33	            chars += len(line)
+    34	            words += len(line.split())
+    35	
+    36	        print('{:>8}{:>8}{:>8} {}'.format(lines, words, chars, fh.name))
+    37	
+    38	
+    39	# --------------------------------------------------
+    40	if __name__ == '__main__':
+    41	    main()
 ````
 
 \newpage
 
-# Chapter 16: wc in Python
+## Discussion
 
-Write your own implementation in Python of the `wc` program where you print lines, words, and characters contained in a file.
+The program needs to take a list of files, so we use the `nargs='+'` to indicate one or more and `type=argparse.FileType('r')` to say they must be "readable" (`'r'`) files. We can use a `for fh in args.file` to iterate over the file handles (hence the name `fh`). We want to initialize counters for `chars`, `words`, and `lines` with the value `0` which we can do with a shorthand unpacking of the tuple `(0, 0, 0)` (parentheses not strictly necessary) on line 30. We can then iterate each line in the open file handle with `for line in fh` and do:
+
+1. Increment `lines` by `1`
+2. Increment `chars` by the length of the `line` (number of characters)
+3. Increment `words` by the length of the list created by splitting the `line` on spaces
+
+Finally we need to print output similar to the actual `wc` program which appears to right-justify each of the numbers for lines, words, and characters in a column 8-characters wide followed by a space and then the name of the file. The call `'{:8}'.format()` will format a string into 8 characters, but they will be left-justified:
+
+````
+>>> '{:8}'.format('hello')
+'hello   '
+````
+
+We can add `>` to right-justify. (Think of it like an arrow pointing to the right where you want the text.)
+
+````
+>>> '{:>8}'.format('hello')
+'   hello'
+````
 
 \newpage
 
-# Chapter 17: Text to FASTA (txt2fa)
+# Chapter 11: Text to FASTA (txt2fa)
 
 Write a Python program called `txt2fa.py` that turns lines of sequences into FASTA formatted output.
 
@@ -3306,7 +3044,7 @@ Write a Python program called `txt2fa.py` that turns lines of sequences into FAS
 
 \newpage
 
-# Chapter 18: Transcribe DNA to RNA
+# Chapter 12: Transcribe DNA to RNA
 
 RNA on Rosalind.
 
@@ -3330,7 +3068,7 @@ RNA on Rosalind.
 
 \newpage
 
-# Chapter 19: Tetranucleotide Frequency
+# Chapter 13: Tetranucleotide Frequency
 
 The DNA problem from Rosalind.
 
@@ -3375,7 +3113,7 @@ The DNA problem from Rosalind.
 
 \newpage
 
-# Chapter 20: Recombinations
+# Chapter 14: Recombinations
 
 Jumble promoter/coding/terminators.
 
@@ -3427,7 +3165,7 @@ Jumble promoter/coding/terminators.
 
 \newpage
 
-# Chapter 21: Finding GC Content
+# Chapter 15: Finding GC Content
 
 Write a Python program called `gc.py` that takes a single positional argument which should be a file. Die with a warning if the argument is not a file. For each line in the file, print the line number and the percentage of the characters on that line that are a "G" or "C" (case-insensitive).
 
@@ -3519,7 +3257,7 @@ $ ./gc.py samples/sample1.txt
 
 \newpage
 
-# Chapter 22: head.py
+# Chapter 16: head.py
 
 Create a Python program called `head.py` that expects one or two arguments. If there are no arguments, print a "Usage" statement. The first argument is required and much be a regular file; if it is not, print "<arg> is not a file" and exit *with an error code*. The second argument is optional. If given, it must be a positive number (non-zero); if it is not, then print "lines (<arg>) must be a positive number". If no argument is provided, use a default value of 3. You can expect that the test will only give you a value that can be safely converted to a number using the `int` function. If given good input, it should act like the normal `head` utility and print the expected number of lines from the given file.
 
@@ -3587,7 +3325,7 @@ casually.
 
 \newpage
 
-# Chapter 23: cat_n.py
+# Chapter 17: cat_n.py
 
 Create a Python program called `cat_n.py` that expects exactly one argument which is a regular file and prints usage statement if either condition fails. It should print each line of the file argument preceeded by the line number which is right-justified in spaces and a colon. You may the format '{:5}: {}' to make it look exactly like the output below, but the test is just checking for a leading space, some number(s), a colon, and the line of text.
 
@@ -3657,7 +3395,7 @@ $ ./cat_n.py files/sonnet-29.txt
 
 \newpage
 
-# Chapter 24: Run-Length Encoding of DNA
+# Chapter 18: Run-Length Encoding of DNA
 
 Information content, compression, strings.
 
@@ -3727,7 +3465,7 @@ Information content, compression, strings.
 
 \newpage
 
-# Chapter 25: Sequence Length Columns
+# Chapter 19: Sequence Length Columns
 
 Change this to process short sequences.
 
@@ -3807,7 +3545,7 @@ adipoma              7
 
 \newpage
 
-# Chapter 26: Find Conversed Bases
+# Chapter 20: Find Conversed Bases
 
 Multiple sequence alignment
 
@@ -3859,7 +3597,7 @@ Multiple sequence alignment
 
 \newpage
 
-# Chapter 27: Python Dictionaries
+# Chapter 21: Python Dictionaries
 
 > Sometimes I feel like my job is deeply meaningful and then I remember that at the end of the day most of what I do is asking students to read error messages from compilers. -- Kristopher Micinski
 
@@ -4810,7 +4548,7 @@ Our word counting program thought these two texts only 76% similar, but our kmer
 
 \newpage
 
-# Chapter 28: Using Dictionaries to Count Character Frequency
+# Chapter 22: Using Dictionaries to Count Character Frequency
 
 It's good.
 
@@ -4924,7 +4662,7 @@ It's good.
 
 \newpage
 
-# Chapter 29: Using Dictionaries to Count Word Frequency
+# Chapter 23: Using Dictionaries to Count Word Frequency
 
 
 
@@ -5005,7 +4743,7 @@ It's good.
 
 \newpage
 
-# Chapter 30: Character Frequency Histogram
+# Chapter 24: Character Frequency Histogram
 
 Write a Python program called `histy.py` that takes a single positional argument that may be plain text or the name of a file to read for the text. Count the frequency of each character (not spaces) and print a histogram of the data. By default, you should order the histogram by the characters but include `-f|--frequency_sort` option to sort by the frequency (in descending order). Also include a `-c|--character` option (default `|`) to represent a mark in the histogram, a `-m|--minimum` option (default `1`) to include a character in the output, a `-w|--width` option (default `70`) to limit the size of the histogram, and a `-i|--case_insensitive` flag to force all input to uppercase.
 
@@ -5180,7 +4918,7 @@ W    375 ###
 
 \newpage
 
-# Chapter 31: Amino Acid Translation
+# Chapter 25: Amino Acid Translation
 
 Using dict!
 
@@ -5235,7 +4973,7 @@ Using dict!
 
 \newpage
 
-# Chapter 32: Translate DNA/RNA to Amino Acids
+# Chapter 26: Translate DNA/RNA to Amino Acids
 
 Write a Python program called `translate_proteins.py` that translates a given DNA/RNA sequence to amino acids using a provided codon table. The output will be written to a file either provided by the user or a default of "out.txt". 
 
@@ -5409,7 +5147,7 @@ The "Python Patterns" has an example of how to "Extract Codons from DNA" that wi
 
 \newpage
 
-# Chapter 33: Parsing BLAST -outfmt 6
+# Chapter 27: Parsing BLAST -outfmt 6
 
 Write a Python program called "blastomatic.py" that takes a BLAST hits file (-outfmt 6, tab-delimited format) as a single positional argument and a named "--annotations" argument that is an annotations file that gives genus and species information for a given sequence ID. Check that both are actually files and die '"XXX" is not a file' if they are not. Iterate over the BLAST hits and use the sequence ID (`saccver`) to lookup the sequence in the annotations file so that you can print out the seq ID and the percent identity (`pident`) from the hits file along with the `genus` and `species` from the annotations file.
 
@@ -5624,7 +5362,7 @@ bfb6f5dfb4d0ef0842be8f5df6c86459  99.567  Prochlorococcus  MIT9313  NA
 
 \newpage
 
-# Chapter 34: Summarize Centrifuge Hits by Tax Name
+# Chapter 28: Summarize Centrifuge Hits by Tax Name
 
 
 
@@ -5680,7 +5418,7 @@ bfb6f5dfb4d0ef0842be8f5df6c86459  99.567  Prochlorococcus  MIT9313  NA
 
 \newpage
 
-# Chapter 35: Find Pairwise Sample Geographic Distance
+# Chapter 29: Find Pairwise Sample Geographic Distance
 
 Given a list of sample/lat/lon, find/filter all pairwise sample distances.
 
@@ -5938,7 +5676,7 @@ alias blast6chk='tabchk.py -f "qseqid,sseqid,pident,length,mismatch,gapopen,qsta
 
 \newpage
 
-# Chapter 37: tab2json.py
+# Chapter 31: tab2json.py
 
 At some point I must have needed to turn a flat, delimited text file into a hierarchical, JSON structured, but I cannot at this moment remember why. Anyway, here's a program that will do that.
 
@@ -6052,7 +5790,7 @@ At some point I must have needed to turn a flat, delimited text file into a hier
 
 \newpage
 
-# Chapter 38: FASTA Summary With Seqmagique
+# Chapter 32: FASTA Summary With Seqmagique
 
 Now let's finally get into parsing good, old FASTA files.  We're going to need to install the BioPython (http://biopython.org/) module to get a FASTA parser.  This should work for you:
 
@@ -6161,7 +5899,7 @@ The code to produce this builds on our earlier skills of lists and dictionaries 
 
 \newpage
 
-# Chapter 39: FASTA subset
+# Chapter 33: FASTA subset
 
 Sometimes you may only want to use part of a FASTA file, e.g., you want the first 1000 sequences to test some code, or you have samples that vary wildly in size and you want to sub-sample them down to an equal number of reads.  Here is a Python program that will write the first N samples to a given output directory:
 
@@ -6299,7 +6037,7 @@ Sometimes you may only want to use part of a FASTA file, e.g., you want the firs
 
 \newpage
 
-# Chapter 40: Randomly Subset a FASTA file
+# Chapter 34: Randomly Subset a FASTA file
 
 Here is a version that will randomly select some percentage of the reads from the input file. I had to write this version because we had created an artificial metagenome from a set of known organisms, and I was testing a program with input of various numbers of reads. I did not realize at first that, in creating the artificial set, reads from each organism had been added in blocks. Since I was taking all my reads from the top of the file down, I was mostly getting just the first few species. Randomly selecting reads when there are potentially millions of records is a bit tricky, so I decided to use a non-deterministic approach where I just roll the dice and see if the number I get on each read is less than the percentage of reads I want to take. This program will also stop at a given number of reads so you could use it to randomly subset an unevenly sized number of samples down to the same number of reads per sample.
 
@@ -6444,7 +6182,7 @@ Here is a version that will randomly select some percentage of the reads from th
 
 \newpage
 
-# Chapter 41: FASTA splitter
+# Chapter 35: FASTA splitter
 
 I seem to have implemented my own FASTA splitter a few times in as many languages.  Here is one that writes a maximum number of sequences to each output file.  It would not be hard to instead write a maximum number of bytes, but, for the short reads I usually handle, this works fine.  Again I will use the BioPython `SeqIO` module to parse the FASTA files.
 
@@ -6659,7 +6397,7 @@ fasplit/CAM_SMPL_GS112.0010.fa      50
 
 \newpage
 
-# Chapter 42: Python FASTA GC Segregator
+# Chapter 36: Python FASTA GC Segregator
 
 Write a Python program called "gc.py" that takes 
 
@@ -6820,7 +6558,7 @@ Look back at the many examples of counting DNA to pick a method you like to coun
 
 \newpage
 
-# Chapter 43: FASTA Interleaved Paired Read Splitter
+# Chapter 37: FASTA Interleaved Paired Read Splitter
 
 Some sequencing platforms (e.g., Illumina) will create read pairs (forward/reverse) that may be interleaved together into one file with the forward read immediately followed by the reverse read or the reads may be in two separate files like `foo_1.fastq` and `foo_2.fastq` where `_1` is the forward read file and `_2` contains the reverse reads (or sometimes `_R1`/`_R2`). 
 
@@ -6947,7 +6685,7 @@ $ ./au_pair.py inputs/* -o all
 
 \newpage
 
-# Chapter 44: FASTQ to FASTA
+# Chapter 38: FASTQ to FASTA
 
 FASTA (sequence) plus "quality" scores for each base call gives us "FASTQ." Here is an example:
 
@@ -7127,7 +6865,7 @@ Can you write one in Python?
 
 \newpage
 
-# Chapter 45: Concatenate FASTX Files
+# Chapter 39: Concatenate FASTX Files
 
 Given a directory/list of FASTQ/A files like this:
 
@@ -7308,7 +7046,7 @@ Turn it into this:
 
 \newpage
 
-# Chapter 46: Parsing GFF
+# Chapter 40: Parsing GFF
 
 Two of the most common output files in bioinformatics, GFF (General Feature Format) and BLAST's tab/CSV files do not include headers, so it's up to you to merge in the headers.  Additionally, some of the lines may be comments (they start with `#` just like bash and Python), so you should skip those.  Further, the last field in GFF is basically a dumping ground for whatever else the data provider felt like putting there.  Usually it's a bunch of "key=value" pairs, but there's no guarantee.  Let's take a look at parsing the GFF output from Prodigal:
 
@@ -7401,7 +7139,7 @@ Two of the most common output files in bioinformatics, GFF (General Feature Form
 
 \newpage
 
-# Chapter 47: Parsing NCBI Taxonomy XML
+# Chapter 41: Parsing NCBI Taxonomy XML
 
 Here's an example that looks at XML from the NCBI taxonomy. Here is what the raw file looks like:
 
@@ -7534,7 +7272,7 @@ attr.ENA-LAST-UPDATE     : 2018-08-15
 
 \newpage
 
-# Chapter 48: Fetching and Parsing PubMed JSON
+# Chapter 42: Fetching and Parsing PubMed JSON
 
 Oh yeah.
 
@@ -7613,7 +7351,7 @@ Oh yeah.
 
 \newpage
 
-# Chapter 49: Parsing SwissProt
+# Chapter 43: Parsing SwissProt
 
 The SwissProt format is one, like GenBank and EMBL, that allows for detailed annotation of a sequence whereas FASTA/Q are primarily devoted to the sequence/quality and sometimes metadata/annotations are crudely shoved into the header line. Parsing SwissProt, however, is no more difficult thanks to the `SeqIO` module. Most of the interesting non-sequence data is in the `annotations` which is a dictionary where the keys are strings like "accessions" and "keywords" and the values are ints, strings, and lists.
 
@@ -7695,7 +7433,7 @@ You should look at the sample "input.swiss" file to get a greater understanding 
 
 \newpage
 
-# Chapter 50: Find Overlapping Genes in GFF
+# Chapter 44: Find Overlapping Genes in GFF
 
 
 
@@ -7829,7 +7567,7 @@ You should look at the sample "input.swiss" file to get a greater understanding 
 
 \newpage
 
-# Chapter 51: Parsing SwissProt
+# Chapter 45: Parsing SwissProt
 
 > “Without requirements or design, programming is the art of adding bugs to an empty text file." - Louis Srygley
 
@@ -8084,7 +7822,7 @@ Keep this in mind when you are trying to find if there is an intersection of the
 
 \newpage
 
-# Chapter 52: Filter FASTA by Taxonomy
+# Chapter 46: Filter FASTA by Taxonomy
 
 Given a FASTA file, filter for those sequences in the given tax list.
 
@@ -8227,7 +7965,7 @@ Given a FASTA file, filter for those sequences in the given tax list.
 
 \newpage
 
-# Chapter 53: Filter Reads by Centrifuge Taxa Classification
+# Chapter 47: Filter Reads by Centrifuge Taxa Classification
 
 
 
@@ -8341,7 +8079,7 @@ Given a FASTA file, filter for those sequences in the given tax list.
 
 \newpage
 
-# Chapter 54: Fetching and Parsing PubMed JSON
+# Chapter 48: Fetching and Parsing PubMed JSON
 
 Oh yeah.
 
@@ -8420,7 +8158,7 @@ Oh yeah.
 
 \newpage
 
-# Chapter 55: Find Unclustered Proteins with Python
+# Chapter 49: Find Unclustered Proteins with Python
 
 Run `make data` to get the data you need for this exercise or manually download the data:
 
@@ -8634,7 +8372,7 @@ Once you know which protein IDs were clustered, go through the `proteins.fa` fil
 
 \newpage
 
-# Chapter 56: Expanding IUPAC with Regular Expression
+# Chapter 50: Expanding IUPAC with Regular Expression
 
 Write a program called `iupac.py` that translates an IUPAC-encoded (https://www.bioinformatics.org/sms/iupac.html) string of DNA into a regular expression that will match all the possible strings of DNA that match.
 
@@ -8790,7 +8528,7 @@ CGT OK
 
 \newpage
 
-# Chapter 57: Date Parsing with Regular Expressions 
+# Chapter 51: Date Parsing with Regular Expressions 
 
 Write a Python program called `dates.py` that takes as a single, positional argument a string and attempt to parse it as one of the given date formats. If given no argument, it should print a usage statement. It does not need to respond to `-h|--help`, so you could use `new_py.py` without the argparse flag.
 
@@ -8936,7 +8674,7 @@ While there are date parsing modules, I do not want you to use those in your cod
 
 \newpage
 
-# Chapter 58: Centrifuge Pipeline in Python
+# Chapter 52: Centrifuge Pipeline in Python
 
 \newpage
 
@@ -9324,7 +9062,7 @@ While there are date parsing modules, I do not want you to use those in your cod
 
 \newpage
 
-# Chapter 59: SQLite in Python
+# Chapter 53: SQLite in Python
 
 SQLite (https://www.sqlite.org) is a lightweight, SQL/relational database that is available by default with Python (https://docs.python.org/3/library/sqlite3.html).  By using `import sqlite3` you can interact with an SQLite database.  So, let's create one, returning to our earlier Centrifuge output.  Here is the file "tables.sql" containing the SQL statements needed to drop and create the tables:
 
@@ -9844,7 +9582,7 @@ YELLOWSTONE_SMPL_20723  Synechococcus sp. JA-3-3Ab         6432         0.98
 
 \newpage
 
-# Chapter 60: Finding Longhurst Province
+# Chapter 54: Finding Longhurst Province
 
 Using shapes
 
@@ -9880,7 +9618,7 @@ Using shapes
 
 \newpage
 
-# Chapter 61: Finding K-mers in Text
+# Chapter 55: Finding K-mers in Text
 
 ````
 $ ./kmer_tiler.py foobar
@@ -9924,7 +9662,7 @@ foo
 
 \newpage
 
-# Chapter 62: De Bruijn Graphs in Python
+# Chapter 56: De Bruijn Graphs in Python
 
 We will find paths through sequences that could aid in assembly (cf http://rosalind.info/problems/grph/). For this exercise, we will only attempt to join any two sequences together. To do this, we will look at the last `k` characters of every sequence and find where the first `k` character of a *different* sequence are the same. 
 
@@ -10063,7 +9801,7 @@ You will write a Python program called `grph.py` which will take a `-k|--overlap
 
 \newpage
 
-# Chapter 63: Find Common Words with Mismatches
+# Chapter 57: Find Common Words with Mismatches
 
 Write a Python program called `commoner.py` that takes exactly two positional arguments which should be text files that you will read and find words that are found to be in common. The program should also accept a `-m|--min_len` option (integer) which is the minimum length for a word to be included (so that we can avoid common short words like articles and "I", etc.) as well as a `-n|--hamming_distance` (integer) value that is the maximum allowed Hamming (edit) distance to consider two words to be the same. There should also be two options for debugging, one `-d|--debug` that turns on logging into a `-l|--logfile` option that defaults to `.log`. Lastly, the program should have a `-t|--table` option that indicates the output should be formatted into an ASCII table using the `tabulate` module (https://pypi.org/project/tabulate/); the default output (that is, without `-t`) should be tab-delimited text.
 
@@ -10449,7 +10187,7 @@ The Makefile's `test` target is `pytest -v commoner.py test.py`. Notice how it's
 
 \newpage
 
-# Chapter 64: Sequence Similarity Using Shared k-mers
+# Chapter 58: Sequence Similarity Using Shared k-mers
 
 Another way to explore sequence similarity.
 
@@ -10517,7 +10255,7 @@ Another way to explore sequence similarity.
 
 \newpage
 
-# Chapter 65: Species Abundance Bubble Plot
+# Chapter 59: Species Abundance Bubble Plot
 
 Centrifuge is a program that will make taxonomic assignments to short DNA reads. Write a program called `plot.py` that will read the `.tsv` output file from Centrifuge that gives a summary of the species and abundance for a given sample. The program should take the output directory containing a number of samples and use `matplotlib` to create a bubble plot showing the abundance of taxa at various `-r|--rank` assignments.
 
@@ -10699,7 +10437,7 @@ optional arguments:
 
 \newpage
 
-# Chapter 66: Writing Pipelines in Python
+# Chapter 60: Writing Pipelines in Python
 
 > Falling in love with code means falling in love with problem solving and being a part of a forever ongoing conversation. -- Kathryn Barrett
 
@@ -10981,13 +10719,13 @@ Done.
 The `parallel` version looks out of order because the jobs are run as quickly as possible in whatever order that happens.
 \newpage
 
-# Chapter 67: BLAST Pipeline in Python
+# Chapter 61: BLAST Pipeline in Python
 
 Everyone needs a thneed.
 
 \newpage
 
-# Chapter 68: CD-HIT Pipeline
+# Chapter 62: CD-HIT Pipeline
 
 Let's take the `cd-hit` cluster exercise and extend it to where we take the proteins FASTA, run cd-hit, and find the unclustered proteins all in one go. First things first, we need to ensure `cd-hit` is on our system. It's highly unlikely that it is, so let's figure out how to install it.
 

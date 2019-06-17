@@ -1,4 +1,4 @@
-# "Hello" In Python
+# Hello: Named Command-line Options
 
 Write a Python program called `hello.py` that accepts three named arguments, `-g|--greeting` which is the greeting, `-n|--name` which is the name, and `-e|--excited` which is a flag to indicate whether to use a "!" in the output `<greeting>, <name><punctuation>`.
 

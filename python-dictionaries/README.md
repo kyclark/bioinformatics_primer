@@ -1,4 +1,4 @@
-# Python Dictionaries
+# Introduction to Python Dictionaries
 
 > Sometimes I feel like my job is deeply meaningful and then I remember that at the end of the day most of what I do is asking students to read error messages from compilers. -- Kristopher Micinski
 

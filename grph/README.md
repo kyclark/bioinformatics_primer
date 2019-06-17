@@ -1,4 +1,4 @@
-# De Bruijn Graphs in Python
+# Using De Bruijn Graphs to Assemble Sequences
 
 We will find paths through sequences that could aid in assembly (cf http://rosalind.info/problems/grph/). For this exercise, we will only attempt to join any two sequences together. To do this, we will look at the last `k` characters of every sequence and find where the first `k` character of a *different* sequence are the same. 
 

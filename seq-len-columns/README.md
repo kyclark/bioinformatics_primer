@@ -1,4 +1,4 @@
-# Sequence Length Columns
+# Strings: Find and Format Sequence Lengths
 
 Change this to process short sequences.
 

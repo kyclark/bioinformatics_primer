@@ -1,6 +1,6 @@
-# Python FASTA GC Segregator
+# FASTA Segregator by GC Content
 
-Write a Python program called "gc.py" that takes 
+Write a Python program called `gc.py` that takes 
 
 * One or more FASTA files as positional arguments
 * An option `-o|--outdir` directory name to write the output (default "out")

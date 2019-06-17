@@ -1,4 +1,4 @@
-# Greeter
+# Greeter: Positional Command-line Arguments
 
 Write a Python program named `hello.py` that warmly greets the names you provide.  When there are two names, join them with "and."  When there are three or more, join them on commas (INCLUDING THE OXFORD WE ARE NOT SAVAGES) and "and." If no names are supplied, print a usage.
 

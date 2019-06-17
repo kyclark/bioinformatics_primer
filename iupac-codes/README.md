@@ -1,4 +1,4 @@
-# Expanding IUPAC with Regular Expression
+# Expanding DNA IUPAC Codes with Regular Expression
 
 Write a program called `iupac.py` that translates an IUPAC-encoded (https://www.bioinformatics.org/sms/iupac.html) string of DNA into a regular expression that will match all the possible strings of DNA that match.
 

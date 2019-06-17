@@ -1,3 +1,3 @@
-# Using Dictionaries to Count Character Frequency
+# Count Character Frequency with Dictionaries 
 
-It's good.
+Improvement over GC content.

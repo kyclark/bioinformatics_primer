@@ -1,4 +1,4 @@
-# Date Parsing with Regular Expressions 
+# Parsing Date Formats with Regular Expressions 
 
 Write a Python program called `dates.py` that takes as a single, positional argument a string and attempt to parse it as one of the given date formats. If given no argument, it should print a usage statement. It does not need to respond to `-h|--help`, so you could use `new_py.py` without the argparse flag.
 

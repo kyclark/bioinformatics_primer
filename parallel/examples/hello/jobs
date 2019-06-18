@@ -1,0 +1,5 @@
+./hello.sh Bobby
+./hello.sh "Lord Voldemort"
+./hello.sh Jan
+./hello.sh Greg
+./hello.sh Marcia

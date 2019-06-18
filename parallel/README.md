@@ -1,6 +1,6 @@
 # Using GNU Parallel to Run Concurrent Processes
 
-"GNU parallel is a shell tool for executing jobs in parallel using one or more computers." (https://www.gnu.org/software/parallel/). To imagine working in parallel, think about the construction of the First Transcontinental Railroad that linked the East and West coasts of America. The companies involved didn't start from one end and build it to the other. The track was built in independent sections that eventually connected as this was faster and more efficient. If you have a large job that can be broken into smaller tasks that can be run independently from each other, it's more efficient to use multiple processors possibly over many machines to run as many tasks concurrently than to run one big task.
+"GNU parallel is a shell tool for executing jobs in parallel using one or more computers." (https://www.gnu.org/software/parallel/). To imagine working in parallel, think about the construction of the First Transcontinental Railroad that linked the Omaha to San Francisco. The companies involved didn't start from one end and build it to the other. The track was built in independent sections that eventually connected as this was faster and more efficient. If you have a large job that can be broken into smaller tasks that can be run independently from each other, it's more efficient to use multiple processors possibly over many machines to run as many tasks concurrently than to run one big task.
 
 Imagine you need to BLAST several million sequences. You could just run `blastn` on the file and wait a few days for it to finish. Alternatively, you could split the sequences into several files and distribute the BLAST commands to several machines each of which might finish in hours rather than days. At the end, you would need only to concatenate the BLAST hits to get the same answer you would have gotten from BLASTing all the sequences in one file. 
 
@@ -8,7 +8,7 @@ The advantage of using an HPCC (high performance computing cluster) is that you 
 
 Unfortunately, not everyone working in bioinformatics has ready access to a HPC cluster. Still, it's possible that you could enjoy the benefits of parallel computing. It's likely that even your laptop has more than one CPU that could be used in parallel or maybe your lab or PI has a beefy server somewhere that has 12-24 processors. If you write all the commands you need to run into to a file, you can then use `parallel` to use execute those commands using as many CPUs as you desire. As jobs finish, `parallel` will launch more, always keeping all the cores busy, much like an HPC scheduler.
 
-I tend to use `parallel` in most of my pipelines, even if they will run on an HPC. Jobs like BLAST aren't actually great to parallelize because BLAST will often require all the available memory on the node, but something like converting FASTQ files to FASTA format is perfect to farm out to multiple CPUs. 
+Jobs like BLAST aren't actually great to parallelize because BLAST will often require all the available memory on the node, but something like converting FASTQ files to FASTA format is perfect to farm out to multiple CPUs. 
 
 ## "Hello" Program
 
@@ -84,6 +84,9 @@ Hello, Jan!
 Hello, Greg!
 Hello, Marcia!
 ````
+
+Notice that the argument of "Lord Voldemort" actually triggers a non-zero exit code which is perceived by the system as an error (I think of an exit value of `0` as "zero errors"), but we didn't get a message that there was an error.
+
 ## Running Jobs with parallel
 
 Another option is to push the commands to `parallel` with an option `-j` to indicate how many CPUs to use concurrently. If you indicate more CPUs than you actually have, `parallel` will just use however many are available. If you don't tell `parallel` how many to use, it will use *all available CPUs* which is probably not what you want. It's often wise to leave 1 or 2 cores open for the machine itself! If we run `make parallel` to execute the `parallel` target, we see this:
@@ -99,7 +102,7 @@ Hello, Marcia!
 make: *** [parallel] Error 1
 ````
 
-One of the jobs failed. Sometimes you want everything to stop if you encounter a problem, e.g., one of your FASTA files was corrupted so you really need to fix it before finishing the rest of the analysis with incomplete data. You can tell `parallel` to "halt" when it encounters an error. See the `halt` target:
+Now we can easily see that one of the jobs failed. Sometimes you want everything to stop if you encounter a problem, e.g., one of your FASTA files was corrupted so you really need to fix it before finishing the rest of the analysis with incomplete data. You can tell `parallel` to "halt" when it encounters an error. See the `halt` target:
 
 ````
 $ make halt
@@ -113,11 +116,11 @@ Hello, Jan!
 make: *** [halt] Error 1
 ````
 
-You see that we didn't get to the end of the jobs file. It happended that "Jan" was greeted after the error, but no other jobs were started because we told `parallel` to halt as soon as possible after encountering any error.
+We didn't get to the end of the jobs file because the failure caused the whole process to stop. It happended that "Jan" was greeted after the error, but no other jobs were started because we told `parallel` to halt as soon as possible after encountering any error.
 
 ## Dynamically Writing a Jobs File
 
-It's not typical that you would manually write a jobs file. Usually you have some input files or directories from the user and need to go find all the files to process. Here is an example of reading the top 100 boys' names from 1945 birth records and sending those to our `hello.sh` program.
+It's not typical that you would manually write a jobs file. Usually you have some input files or directories from the user and then need to go find all the files to process. Here is an example of reading the top 100 boys' names from 1945 birth records and sending those to our `hello.sh` program.
 
 ````
 $ cat -n run_names.sh
@@ -186,6 +189,10 @@ $ ./run_names.sh ./long_hello.sh
 
 Then use a program like `top` or `htop` on your system to watch how the CPUs are being used!
 
+Later we'll look at writing a pipeline in Python that writes a jobs file and executes it with `parallel` similar to `run_names.sh`.
+
 ## Summary
+
+I tend to use `parallel` in somewhere most of my pipelines, even if they will run on an HPC. (On the Stampede2 cluster at TACC, the machines on the default queue have 68 cores!) So, rather than write a Python program that will process all the files in a directory, I will tend to write it so that it handles just one file. Then I'll write a shell script to find all the input files and write a jobs file where each file is handled individually by the Python program. If `parallel` is available, then I'll have it execute the jobs using some given number of cores (like `n-2` where `n` is the total number of cores); otherwise I can always just run the commands as a `bash` batch file.
 
 To paraphrase Dr. Ian Malcolm, just because you *can* parallelize jobs doesn't mean you always *should* do so. As stated before, jobs that use loads of memory like BLAST probably should not be unless more than one copy of the database can fit into memory. Jobs that are mostly I/O (input/output) are good candidates for use with `parallel`. 

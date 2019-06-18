@@ -1826,13 +1826,312 @@ Bad config "foo"
 I wouldn't recommend trying to do much more with `bash` scripting. As you get more complicated arguments and options, it's really time to move to Python where we have libraries that do the hard work of parsing out the command line.
 \newpage
 
-# Chapter 3: Bash: FASTQ-to-FASTA Converter (fq2fa)
+# Chapter 3: Using GNU Parallel to Run Concurrent Processes
+
+"GNU parallel is a shell tool for executing jobs in parallel using one or more computers." (https://www.gnu.org/software/parallel/). To imagine working in parallel, think about the construction of the First Transcontinental Railroad that linked the Omaha to San Francisco. The companies involved didn't start from one end and build it to the other. The track was built in independent sections that eventually connected as this was faster and more efficient. If you have a large job that can be broken into smaller tasks that can be run independently from each other, it's more efficient to use multiple processors possibly over many machines to run as many tasks concurrently than to run one big task.
+
+Imagine you need to BLAST several million sequences. You could just run `blastn` on the file and wait a few days for it to finish. Alternatively, you could split the sequences into several files and distribute the BLAST commands to several machines each of which might finish in hours rather than days. At the end, you would need only to concatenate the BLAST hits to get the same answer you would have gotten from BLASTing all the sequences in one file. 
+
+The advantage of using an HPCC (high performance computing cluster) is that you have access to several "nodes" (machines), each of which can have many "cores" (CPUs). You split up the sequences, then tell the HPC scheduler how many machines with what kind of memory requirements you need for how long, and it will schedule and run the jobs for you as machines become available. 
+
+Unfortunately, not everyone working in bioinformatics has ready access to a HPC cluster. Still, it's possible that you could enjoy the benefits of parallel computing. It's likely that even your laptop has more than one CPU that could be used in parallel or maybe your lab or PI has a beefy server somewhere that has 12-24 processors. If you write all the commands you need to run into to a file, you can then use `parallel` to use execute those commands using as many CPUs as you desire. As jobs finish, `parallel` will launch more, always keeping all the cores busy, much like an HPC scheduler.
+
+Jobs like BLAST aren't actually great to parallelize because BLAST will often require all the available memory on the node, but something like converting FASTQ files to FASTA format is perfect to farm out to multiple CPUs. 
+
+## "Hello" Program
+
+We'll start simple by pretending this "hello.sh" is something more interesting than it really is:
+
+````
+$ cat -n hello.sh
+     1	#!/usr/bin/env bash
+     2
+     3	if [[ $# -lt 1 ]]; then
+     4	    printf "Usage: %s NAME\n" $(basename $0)
+     5	    exit 1
+     6	fi
+     7
+     8	NAME=$1
+     9
+    10	if [[ $NAME == 'Lord Voldemort' ]]; then
+    11	    echo "Upon advice of my counsel, I respectfully refuse to say that name."
+    12	    exit 1
+    13	fi
+    14
+    15	echo "Hello, $1!"
+$ ./hello.sh
+Usage: hello.sh NAME
+$ ./hello.sh Jan
+Hello, Jan!
+$ ./hello.sh "Lord Voldemort"
+Upon advice of my counsel, I respectfully refuse to say that name.
+````
+
+## Jobs File
+
+We'll write a `jobs` file that will run this program with various names:
+
+````
+$ cat jobs
+./hello.sh Bobby
+./hello.sh "Lord Voldemort"
+./hello.sh Jan
+./hello.sh Greg
+./hello.sh Marcia
+````
+
+
+In a `Makefile`, I've documented several ways we could run this. 
+
+````
+$ cat Makefile
+.PHONY: shell parallel halt
+
+JOBS = 'jobs'
+
+shell:
+	bash $(JOBS)
+
+parallel:
+	parallel -j 2 < $(JOBS)
+
+halt:
+	parallel -j 2 --halt soon,fail=1 < $(JOBS)
+````
+
+## Running Jobs with bash
+
+The simplest way to execute all the jobs is to tell `bash` to execute the lines in the `jobs` file:
+
+````
+$ make shell
+bash 'jobs'
+Hello, Bobby!
+Upon advice of my counsel, I respectfully refuse to say that name.
+Hello, Jan!
+Hello, Greg!
+Hello, Marcia!
+````
+
+Notice that the argument of "Lord Voldemort" actually triggers a non-zero exit code which is perceived by the system as an error (I think of an exit value of `0` as "zero errors"), but we didn't get a message that there was an error.
+
+## Running Jobs with parallel
+
+Another option is to push the commands to `parallel` with an option `-j` to indicate how many CPUs to use concurrently. If you indicate more CPUs than you actually have, `parallel` will just use however many are available. If you don't tell `parallel` how many to use, it will use *all available CPUs* which is probably not what you want. It's often wise to leave 1 or 2 cores open for the machine itself! If we run `make parallel` to execute the `parallel` target, we see this:
+
+````
+$ make parallel
+parallel -j 2 < 'jobs'
+Hello, Bobby!
+Upon advice of my counsel, I respectfully refuse to say that name.
+Hello, Jan!
+Hello, Greg!
+Hello, Marcia!
+make: *** [parallel] Error 1
+````
+
+Now we can easily see that one of the jobs failed. Sometimes you want everything to stop if you encounter a problem, e.g., one of your FASTA files was corrupted so you really need to fix it before finishing the rest of the analysis with incomplete data. You can tell `parallel` to "halt" when it encounters an error. See the `halt` target:
+
+````
+$ make halt
+parallel -j 2 --halt soon,fail=1 < 'jobs'
+Hello, Bobby!
+Upon advice of my counsel, I respectfully refuse to say that name.
+parallel: This job failed:
+./hello.sh "Lord Voldemort"
+parallel: Starting no more jobs. Waiting for 1 jobs to finish.
+Hello, Jan!
+make: *** [halt] Error 1
+````
+
+We didn't get to the end of the jobs file because the failure caused the whole process to stop. It happended that "Jan" was greeted after the error, but no other jobs were started because we told `parallel` to halt as soon as possible after encountering any error.
+
+## Dynamically Writing a Jobs File
+
+It's not typical that you would manually write a jobs file. Usually you have some input files or directories from the user and then need to go find all the files to process. Here is an example of reading the top 100 boys' names from 1945 birth records and sending those to our `hello.sh` program.
+
+````
+$ cat -n run_names.sh
+     1	#!/usr/bin/env bash
+     2
+     3	set -u
+     4
+     5	HELLO=${1:-"./hello.sh"}
+     6	NAMES="../../../inputs/1945-boys.txt"
+     7
+     8	if [[ ! -f "$NAMES" ]]; then
+     9	    echo "Missing NAMES \"$NAMES\""
+    10	    exit 1
+    11	fi
+    12
+    13	JOBS=$(mktemp)
+    14	i=0
+    15	while read -r NAME; do
+    16	    i=$((i+1))
+    17	    echo "$HELLO \"#$i $NAME\"" >> "$JOBS"
+    18	done < "$NAMES"
+    19
+    20	parallel < "$JOBS"
+    21
+    22	rm "$JOBS"
+    23	echo "Done."
+````
+
+Notice that I include the rank of each name. If the jobs file were run by `bash`, you would see them printed in order from 1 to 100. Since we ask `parallel` to run it, you'll most likely see them out of order:
+
+````
+$ ./run_names.sh | tail
+Hello, #94 Herbert!
+Hello, #95 Victor!
+Hello, #96 Gregory!
+Hello, #97 Curtis!
+Hello, #98 Bernard!
+Hello, #99 Clifford!
+Hello, #67 Ronnie!
+Hello, #1 James!
+Hello, #100 Gene!
+Done.
+````
+
+Our `hello.sh` is trivial and runs too quickly for us to really see the benenfits of CPU usage. Here is an equally trival program that runs much more slowly:
+
+````
+$ cat long_hello.sh
+#!/usr/bin/env bash
+
+[[ $# -eq 1 ]] && sleep 3 && echo "Hello, $1!"
+````
+
+If there is an argument, the program waits (`sleep`) for 3 seconds and then greets the argument. Run it like the other and see how long it takes:
+
+````
+$ ./long_hello.sh Frank
+Hello, Frank!
+````
+
+Now use this program with the `run_names.sh` program:
+
+````
+$ ./run_names.sh ./long_hello.sh
+````
+
+Then use a program like `top` or `htop` on your system to watch how the CPUs are being used!
+
+Later we'll look at writing a pipeline in Python that writes a jobs file and executes it with `parallel` similar to `run_names.sh`.
+
+## Summary
+
+I tend to use `parallel` in somewhere most of my pipelines, even if they will run on an HPC. (On the Stampede2 cluster at TACC, the machines on the default queue have 68 cores!) So, rather than write a Python program that will process all the files in a directory, I will tend to write it so that it handles just one file. Then I'll write a shell script to find all the input files and write a jobs file where each file is handled individually by the Python program. If `parallel` is available, then I'll have it execute the jobs using some given number of cores (like `n-2` where `n` is the total number of cores); otherwise I can always just run the commands as a `bash` batch file.
+
+To paraphrase Dr. Ian Malcolm, just because you *can* parallelize jobs doesn't mean you always *should* do so. As stated before, jobs that use loads of memory like BLAST probably should not be unless more than one copy of the database can fit into memory. Jobs that are mostly I/O (input/output) are good candidates for use with `parallel`. 
+\newpage
+
+# Chapter 4: Bash: FASTQ-to-FASTA Converter (fq2fa)
 
 Given a list of FASTQ files or directories containing FASTQ files, convert them to FASTA using `parallel`.
 
 \newpage
 
-# Chapter 4: Bash: BAM to FASTA (bam2fa)
+## Solution
+
+````
+     1	#!/bin/bash
+     2	
+     3	# Convert FASTQ files to FASTA
+     4	# Author: Ken Youens-Clark <kyclark@gmail.com>
+     5	
+     6	set -u
+     7	
+     8	INPUT=""
+     9	OUT_DIR=""
+    10	NO_CLOBBER=0
+    11	
+    12	function USAGE() {
+    13	    printf "Usage:\\n  %s -i INPUT -o OUTDIR\\n\\n" "$(basename "$0")"
+    14	
+    15	    echo "Required arguments:"
+    16	    echo " -i INPUT (DIR/FILE[s])"
+    17	    echo " -o OUTDIR (DIR/FILE[s])"
+    18	    echo
+    19	    exit "${1:-0}"
+    20	}
+    21	
+    22	[[ $# -eq 0 ]] && USAGE 1
+    23	
+    24	while getopts :i:o:nh OPT; do
+    25	    case $OPT in
+    26	        i)
+    27	            INPUT="$OPTARG"
+    28	            ;;
+    29	        h)
+    30	            USAGE
+    31	            ;;
+    32	        n)
+    33	            NO_CLOBBER=1
+    34	            ;;
+    35	        o)
+    36	            OUT_DIR="$OPTARG"
+    37	            ;;
+    38	        :)
+    39	            echo "Error: Option -$OPTARG requires an argument."
+    40	            exit 1
+    41	            ;;
+    42	        \?)
+    43	            echo "Error: Invalid option: -${OPTARG:-""}"
+    44	            exit 1
+    45	    esac
+    46	done
+    47	
+    48	[[ -z "$INPUT" ]] && USAGE 1
+    49	[[ ! -d "$OUT_DIR" ]] && mkdir -p "$OUT_DIR"
+    50	
+    51	INPUT_FILES=$(mktemp)
+    52	[[ -f "$INPUT" ]] && echo "$INPUT" > "$INPUT_FILES"
+    53	[[ -d "$INPUT" ]] && find "$INPUT" -type f > "$INPUT_FILES"
+    54	
+    55	NUM_INPUT=$(wc -l "$INPUT_FILES" | awk '{print $1}')
+    56	if [[ $NUM_INPUT -lt 1 ]]; then
+    57	    echo "No input"
+    58	    exit 1
+    59	fi
+    60	
+    61	JOBS=$(mktemp)
+    62	
+    63	i=0
+    64	while read -r FILE; do
+    65	    i=$((i+1))
+    66	    BASENAME=$(basename "$FILE")
+    67	    BASENAME=${BASENAME%%.*}
+    68	
+    69	    printf "%3d: %s\\n" $i "$BASENAME"
+    70	
+    71	    OUT_FILE="$OUT_DIR/$BASENAME.fa"
+    72	    if [[ -s "$OUT_FILE" ]] && [[ $NO_CLOBBER -gt 0 ]]; then
+    73	        echo "OUT_FILE \"$OUT_FILE\" already exists"
+    74	        continue
+    75	    fi
+    76	
+    77	    echo "fq2fa.awk \"$FILE\" > \"$OUT_FILE\"" >> "$JOBS"
+    78	done < "$INPUT_FILES"
+    79	
+    80	PARALLEL=$(which parallel)
+    81	
+    82	if [[ -z "$PARALLEL" ]]; then
+    83	    echo "Running serially, install GNU parallel for speed!"
+    84	    sh "$JOBS"
+    85	else
+    86	    echo "Running with $CORES cores in parallel"
+    87	    parallel -j "$CORES" --halt soon,fail=1 < "$JOBS"
+    88	fi
+    89	
+    90	rm "$JOBS"
+    91	
+    92	echo "Done."
+````
+
+\newpage
+
+# Chapter 5: Bash: BAM to FASTA (bam2fa)
 
 Convert BAM files to FASTA
 
@@ -1894,7 +2193,7 @@ Convert BAM files to FASTA
 
 \newpage
 
-# Chapter 5: Using a Makefile to Create Reproducible Workflows
+# Chapter 6: Using a Makefile to Create Reproducible Workflows
 
 GNU `make` is a program we can abuse to help create documented, reproducible workflows. It's intended purpose is to create executable files from source code for languages like `c` or `c++`. This process of turning text into machine instructions is called "compiling" and is often a long and tedious process. If a source code file has not changed since the last time the program was compile, `make` will not bother compiling it again. The compiler needs to compile some files before others and then go through a complicated graph of actions to make the executable. This is a workflow, and we can create our own `Makefile` that runs shell commands rather than compiling programs. It's not how `make` was intended to be used, but it works and you'd be surprised at just how far you can go with `make` before you need to investigate more complicated solutions like `snakemake` (which is `make` mixed with Python), Pegasus, Taverna, and the more than 100 other workflow management systems.
 
@@ -2107,7 +2406,7 @@ Store the unique, sorted results of part (3) into a file named 'terminated-gene
 
 \newpage
 
-# Chapter 6: Git Basics
+# Chapter 7: Git Basics
 
 ## Source Code Management
 
@@ -2134,7 +2433,7 @@ Store the unique, sorted results of part (3) into a file named 'terminated-gene
 
 \newpage
 
-# Chapter 7: Programming with Python
+# Chapter 8: Programming with Python
 
 > “Any fool can write code that a computer can understand. Good programmers write code that humans can understand.” - Martin Fowler
 
@@ -2733,7 +3032,7 @@ In my experience, perhaps 20-50% of the effort to solve most of the exercises ca
 
 \newpage
 
-# Chapter 8: Greeter: Positional Command-line Arguments
+# Chapter 9: Greeter: Positional Command-line Arguments
 
 Write a Python program named `hello.py` that warmly greets the names you provide.  When there are two names, join them with "and."  When there are three or more, join them on commas (INCLUDING THE OXFORD WE ARE NOT SAVAGES) and "and." If no names are supplied, print a usage.
 
@@ -2793,7 +3092,7 @@ Hello to the 6 of you: Greg, Peter, Bobby, Marcia, Jane, and Cindy!
 
 \newpage
 
-# Chapter 9: Handling Named Command-line Arguments in Python
+# Chapter 10: Hello: Named Command-line Options
 
 Write a Python program called `hello.py` that accepts three named arguments, `-g|--greeting` which is the greeting, `-n|--name` which is the name, and `-e|--excited` which is a flag to indicate whether to use a "!" in the output `<greeting>, <name><punctuation>`.
 
@@ -2894,7 +3193,145 @@ Good Night, Gracie!
 
 \newpage
 
-# Chapter 10: Word Count (wc) in Python
+# Chapter 11: File Handling: Emulate "head"
+
+Create a Python program called `head.py` that expects one or two arguments. If there are no arguments, print a "Usage" statement. The first argument is required and much be a regular file; if it is not, print "<arg> is not a file" and exit *with an error code*. The second argument is optional. If given, it must be a positive number (non-zero); if it is not, then print "lines (<arg>) must be a positive number". If no argument is provided, use a default value of 3. You can expect that the test will only give you a value that can be safely converted to a number using the `int` function. If given good input, it should act like the normal `head` utility and print the expected number of lines from the given file.
+
+````
+$ ./head.py
+Usage: head.py FILE [NUM_LINES]
+$ ./head.py foo
+foo is not a file
+$ ./head.py files/issa.txt
+Selected Haiku by Issa
+
+Don’t worry, spiders,
+$ ./head.py files/issa.txt 5
+Selected Haiku by Issa
+
+Don’t worry, spiders,
+I keep house
+casually.
+````
+
+\newpage
+
+## Solution
+
+````
+     1	#!/usr/bin/env python3
+     2	"""
+     3	Author : Ken Youens-Clark <kyclark@gmail.com>
+     4	Date   : 2019-02-04
+     5	Purpose: Emulate head
+     6	"""
+     7	
+     8	import os
+     9	import sys
+    10	
+    11	
+    12	# --------------------------------------------------
+    13	def main():
+    14	    args = sys.argv[1:]
+    15	
+    16	    if len(args) < 1 or len(args) > 2:
+    17	        print('Usage: {} FILE [NUM_LINES]'.format(os.path.basename(sys.argv[0])))
+    18	        sys.exit(1)
+    19	
+    20	    filename = args[0]
+    21	    num_lines = int(args[1]) if len(args) == 2 else 3
+    22	
+    23	    if num_lines < 1:
+    24	        print('lines ({}) must be a positive number'.format(num_lines))
+    25	        sys.exit(1)
+    26	
+    27	    if not os.path.isfile(filename):
+    28	        print('{} is not a file'.format(filename))
+    29	        sys.exit(1)
+    30	
+    31	    for i, line in enumerate(open(filename)):
+    32	        print(line, end='')
+    33	        if i + 1 == num_lines:
+    34	            break
+    35	
+    36	
+    37	# --------------------------------------------------
+    38	main()
+````
+
+\newpage
+
+# Chapter 12: File Handling: Emulate "cat -n"
+
+Create a Python program called `cat_n.py` that expects exactly one argument which is a regular file and prints usage statement if either condition fails. It should print each line of the file argument preceeded by the line number which is right-justified in spaces and a colon. You may the format '{:5}: {}' to make it look exactly like the output below, but the test is just checking for a leading space, some number(s), a colon, and the line of text.
+
+````
+$ ./cat_n.py
+Usage: cat_n.py FILE
+$ ./cat_n.py foo
+foo is not a file
+$ ./cat_n.py files/sonnet-29.txt
+    1: Sonnet 29
+    2: William Shakespeare
+    3:
+    4: When, in disgrace with fortune and men’s eyes,
+    5: I all alone beweep my outcast state,
+    6: And trouble deaf heaven with my bootless cries,
+    7: And look upon myself and curse my fate,
+    8: Wishing me like to one more rich in hope,
+    9: Featured like him, like him with friends possessed,
+   10: Desiring this man’s art and that man’s scope,
+   11: With what I most enjoy contented least;
+   12: Yet in these thoughts myself almost despising,
+   13: Haply I think on thee, and then my state,
+   14: (Like to the lark at break of day arising
+   15: From sullen earth) sings hymns at heaven’s gate;
+   16: For thy sweet love remembered such wealth brings
+   17: That then I scorn to change my state with kings.
+````
+
+\newpage
+
+## Solution
+
+````
+     1	#!/usr/bin/env python3
+     2	"""
+     3	Author : Ken Youens-Clark <kyclark@gmail.com>
+     4	Date   : 2019-02-04
+     5	Purpose: Emulate cat-n
+     6	"""
+     7	
+     8	import os
+     9	import sys
+    10	
+    11	
+    12	# --------------------------------------------------
+    13	def main():
+    14	    args = sys.argv[1:]
+    15	
+    16	    if len(args) != 1:
+    17	        print('Usage: {} FILE'.format(os.path.basename(sys.argv[0])))
+    18	        sys.exit(1)
+    19	
+    20	    file = args[0]
+    21	
+    22	    if not os.path.isfile(file):
+    23	        print('{} is not a file'.format(file))
+    24	        sys.exit(1)
+    25	
+    26	    for i, line in enumerate(open(file), start=1):
+    27	        print('{:5}: {}'.format(i, line), end='')
+    28	
+    29	
+    30	# --------------------------------------------------
+    31	if __name__ == '__main__':
+    32	    main()
+````
+
+\newpage
+
+# Chapter 13: Emulating Word Count (wc) in Python
 
 Write your own implementation in Python of the `wc` program where you print lines, words, and characters contained in a file.
 
@@ -2972,200 +3409,7 @@ We can add `>` to right-justify. (Think of it like an arrow pointing to the righ
 
 \newpage
 
-# Chapter 11: Text to FASTA (txt2fa)
-
-Write a Python program called `txt2fa.py` that turns lines of sequences into FASTA formatted output.
-
-
-
-\newpage
-
-## Solution
-
-````
-     1	#!/usr/bin/env python3
-     2	"""txt2fa"""
-     3	
-     4	import argparse
-     5	import os
-     6	import sys
-     7	
-     8	
-     9	# --------------------------------------------------
-    10	def get_args():
-    11	    """Get command-line arguments"""
-    12	
-    13	    parser = argparse.ArgumentParser(
-    14	        description='Text to FASTA',
-    15	        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    16	
-    17	    parser.add_argument('file',
-    18	                        metavar='FILE',
-    19	                        nargs='+',
-    20	                        type=argparse.FileType('r'),
-    21	                        help='Input file(s)')
-    22	
-    23	    parser.add_argument('-o',
-    24	                        '--outdir',
-    25	                        help='Output dir',
-    26	                        metavar='DIR',
-    27	                        type=str,
-    28	                        default='out')
-    29	
-    30	    return parser.parse_args()
-    31	
-    32	
-    33	# --------------------------------------------------
-    34	def main():
-    35	    """Make a jazz noise here"""
-    36	
-    37	    args = get_args()
-    38	    out_dir = args.outdir
-    39	
-    40	    if not os.path.isdir(out_dir):
-    41	        os.makedirs(out_dir)
-    42	
-    43	    for fnum, fh in enumerate(args.file, start=1):
-    44	        basename = os.path.basename(fh.name)
-    45	        print('{:3}: {}'.format(fnum, basename))
-    46	        out_file = os.path.join(out_dir, basename)
-    47	        out_fh = open(out_file, 'wt')
-    48	        for i, line in enumerate(fh, start=1):
-    49	            out_fh.write('>{}\n{}'.format(i, line))
-    50	        out_fh.close()
-    51	        num = fnum
-    52	
-    53	    print('Done, processed {} file{}.'.format(fnum, '' if fnum == 1 else 's'))
-    54	
-    55	# --------------------------------------------------
-    56	if __name__ == '__main__':
-    57	    main()
-````
-
-\newpage
-
-# Chapter 12: Transcribe DNA to RNA
-
-RNA on Rosalind.
-
-\newpage
-
-## Solution
-
-````
-     1	#!/usr/bin/env python
-     2	
-     3	import sys
-     4	
-     5	def main(file):
-     6	    f = open(file, 'r')
-     7	    rna = ''.join(map(lambda s: s.rstrip(), f.read())).replace('T', 'U')
-     8	    print(rna);
-     9	
-    10	if __name__ == "__main__":
-    11	    main(sys.argv[1])
-````
-
-\newpage
-
-# Chapter 13: Tetranucleotide Frequency
-
-The DNA problem from Rosalind.
-
-\newpage
-
-## Solution
-
-````
-     1	#!/usr/bin/env python3
-     2	"""Tetra-nucleotide counter"""
-     3	
-     4	import sys
-     5	import os
-     6	
-     7	def main():
-     8	    """main"""
-     9	    args = sys.argv[1:]
-    10	
-    11	    if len(args) != 1:
-    12	        print('Usage: {} DNA'.format(os.path.basename(sys.argv[0])))
-    13	        sys.exit(1)
-    14	
-    15	    dna = args[0]
-    16	
-    17	    num_a, num_c, num_g, num_t = 0, 0, 0, 0
-    18	
-    19	    for base in dna.lower():
-    20	        if base == 'a':
-    21	            num_a += 1
-    22	        elif base == 'c':
-    23	            num_c += 1
-    24	        elif base == 'g':
-    25	            num_g += 1
-    26	        elif base == 't':
-    27	            num_t += 1
-    28	
-    29	    print('{} {} {} {}'.format(num_a, num_c, num_g, num_t))
-    30	
-    31	if __name__ == '__main__':
-    32	    main()
-````
-
-\newpage
-
-# Chapter 14: Recombinations
-
-Jumble promoter/coding/terminators.
-
-\newpage
-
-## Solution
-
-````
-     1	#!/usr/bin/env python3
-     2	"""Show recominations"""
-     3	
-     4	import os
-     5	import sys
-     6	from itertools import product
-     7	
-     8	
-     9	def die(msg):
-    10	    """print and exit with an error"""
-    11	    print(msg)
-    12	    sys.exit(1)
-    13	
-    14	
-    15	def main():
-    16	    """main"""
-    17	    args = sys.argv[1:]
-    18	
-    19	    if len(args) != 1:
-    20	        die('Usage: {} NUM_GENES'.format(os.path.basename(sys.argv[0])))
-    21	
-    22	    if not args[0].isdigit():
-    23	        die('"{}" does not look like an integer'.format(args[0]))
-    24	
-    25	    num_genes = int(args[0])
-    26	    if not 2 <= num_genes <= 10:
-    27	        die('NUM_GENES must be greater than 1, less than 10')
-    28	
-    29	    def gen(prefix):
-    30	        return [prefix + str(n) for n in range(1, num_genes + 1)]
-    31	
-    32	    print('N = "{}"'.format(num_genes))
-    33	    combos = product(gen('P'), gen('C'), gen('T'))
-    34	    for i, combo in enumerate(combos, start=1):
-    35	        print('{:4}: {}'.format(i, ' - '.join(combo)))
-    36	
-    37	
-    38	if __name__ == '__main__':
-    39	    main()
-````
-
-\newpage
-
-# Chapter 15: Finding GC Content
+# Chapter 14: Finding GC Content in Sequences
 
 Write a Python program called `gc.py` that takes a single positional argument which should be a file. Die with a warning if the argument is not a file. For each line in the file, print the line number and the percentage of the characters on that line that are a "G" or "C" (case-insensitive).
 
@@ -3257,26 +3501,11 @@ $ ./gc.py samples/sample1.txt
 
 \newpage
 
-# Chapter 16: head.py
+# Chapter 15: FASTA format: Text to FASTA (txt2fa)
 
-Create a Python program called `head.py` that expects one or two arguments. If there are no arguments, print a "Usage" statement. The first argument is required and much be a regular file; if it is not, print "<arg> is not a file" and exit *with an error code*. The second argument is optional. If given, it must be a positive number (non-zero); if it is not, then print "lines (<arg>) must be a positive number". If no argument is provided, use a default value of 3. You can expect that the test will only give you a value that can be safely converted to a number using the `int` function. If given good input, it should act like the normal `head` utility and print the expected number of lines from the given file.
+Write a Python program called `txt2fa.py` that turns lines of sequences into FASTA formatted output.
 
-````
-$ ./head.py
-Usage: head.py FILE [NUM_LINES]
-$ ./head.py foo
-foo is not a file
-$ ./head.py files/issa.txt
-Selected Haiku by Issa
 
-Don’t worry, spiders,
-$ ./head.py files/issa.txt 5
-Selected Haiku by Issa
-
-Don’t worry, spiders,
-I keep house
-casually.
-````
 
 \newpage
 
@@ -3284,75 +3513,93 @@ casually.
 
 ````
      1	#!/usr/bin/env python3
-     2	"""
-     3	Author : Ken Youens-Clark <kyclark@gmail.com>
-     4	Date   : 2019-02-04
-     5	Purpose: Emulate head
-     6	"""
+     2	"""txt2fa"""
+     3	
+     4	import argparse
+     5	import os
+     6	import sys
      7	
-     8	import os
-     9	import sys
-    10	
-    11	
-    12	# --------------------------------------------------
-    13	def main():
-    14	    args = sys.argv[1:]
-    15	
-    16	    if len(args) < 1 or len(args) > 2:
-    17	        print('Usage: {} FILE [NUM_LINES]'.format(os.path.basename(sys.argv[0])))
-    18	        sys.exit(1)
-    19	
-    20	    filename = args[0]
-    21	    num_lines = int(args[1]) if len(args) == 2 else 3
+     8	
+     9	# --------------------------------------------------
+    10	def get_args():
+    11	    """Get command-line arguments"""
+    12	
+    13	    parser = argparse.ArgumentParser(
+    14	        description='Text to FASTA',
+    15	        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    16	
+    17	    parser.add_argument('file',
+    18	                        metavar='FILE',
+    19	                        nargs='+',
+    20	                        type=argparse.FileType('r'),
+    21	                        help='Input file(s)')
     22	
-    23	    if num_lines < 1:
-    24	        print('lines ({}) must be a positive number'.format(num_lines))
-    25	        sys.exit(1)
-    26	
-    27	    if not os.path.isfile(filename):
-    28	        print('{} is not a file'.format(filename))
-    29	        sys.exit(1)
-    30	
-    31	    for i, line in enumerate(open(filename)):
-    32	        print(line, end='')
-    33	        if i + 1 == num_lines:
-    34	            break
-    35	
+    23	    parser.add_argument('-o',
+    24	                        '--outdir',
+    25	                        help='Output dir',
+    26	                        metavar='DIR',
+    27	                        type=str,
+    28	                        default='out')
+    29	
+    30	    return parser.parse_args()
+    31	
+    32	
+    33	# --------------------------------------------------
+    34	def main():
+    35	    """Make a jazz noise here"""
     36	
-    37	# --------------------------------------------------
-    38	main()
+    37	    args = get_args()
+    38	    out_dir = args.outdir
+    39	
+    40	    if not os.path.isdir(out_dir):
+    41	        os.makedirs(out_dir)
+    42	
+    43	    for fnum, fh in enumerate(args.file, start=1):
+    44	        basename = os.path.basename(fh.name)
+    45	        print('{:3}: {}'.format(fnum, basename))
+    46	        out_file = os.path.join(out_dir, basename)
+    47	        out_fh = open(out_file, 'wt')
+    48	        for i, line in enumerate(fh, start=1):
+    49	            out_fh.write('>{}\n{}'.format(i, line))
+    50	        out_fh.close()
+    51	        num = fnum
+    52	
+    53	    print('Done, processed {} file{}.'.format(fnum, '' if fnum == 1 else 's'))
+    54	
+    55	# --------------------------------------------------
+    56	if __name__ == '__main__':
+    57	    main()
 ````
 
 \newpage
 
-# Chapter 17: cat_n.py
+# Chapter 16: Transcribe DNA to RNA
 
-Create a Python program called `cat_n.py` that expects exactly one argument which is a regular file and prints usage statement if either condition fails. It should print each line of the file argument preceeded by the line number which is right-justified in spaces and a colon. You may the format '{:5}: {}' to make it look exactly like the output below, but the test is just checking for a leading space, some number(s), a colon, and the line of text.
+RNA on Rosalind.
+
+\newpage
+
+## Solution
 
 ````
-$ ./cat_n.py
-Usage: cat_n.py FILE
-$ ./cat_n.py foo
-foo is not a file
-$ ./cat_n.py files/sonnet-29.txt
-    1: Sonnet 29
-    2: William Shakespeare
-    3:
-    4: When, in disgrace with fortune and men’s eyes,
-    5: I all alone beweep my outcast state,
-    6: And trouble deaf heaven with my bootless cries,
-    7: And look upon myself and curse my fate,
-    8: Wishing me like to one more rich in hope,
-    9: Featured like him, like him with friends possessed,
-   10: Desiring this man’s art and that man’s scope,
-   11: With what I most enjoy contented least;
-   12: Yet in these thoughts myself almost despising,
-   13: Haply I think on thee, and then my state,
-   14: (Like to the lark at break of day arising
-   15: From sullen earth) sings hymns at heaven’s gate;
-   16: For thy sweet love remembered such wealth brings
-   17: That then I scorn to change my state with kings.
+     1	#!/usr/bin/env python
+     2	
+     3	import sys
+     4	
+     5	def main(file):
+     6	    f = open(file, 'r')
+     7	    rna = ''.join(map(lambda s: s.rstrip(), f.read())).replace('T', 'U')
+     8	    print(rna);
+     9	
+    10	if __name__ == "__main__":
+    11	    main(sys.argv[1])
 ````
+
+\newpage
+
+# Chapter 17: Calculating Tetranucleotide Frequency
+
+The `DNA` problem from Rosalind.
 
 \newpage
 
@@ -3360,42 +3607,94 @@ $ ./cat_n.py files/sonnet-29.txt
 
 ````
      1	#!/usr/bin/env python3
-     2	"""
-     3	Author : Ken Youens-Clark <kyclark@gmail.com>
-     4	Date   : 2019-02-04
-     5	Purpose: Emulate cat-n
-     6	"""
-     7	
-     8	import os
-     9	import sys
+     2	"""Tetra-nucleotide counter"""
+     3	
+     4	import sys
+     5	import os
+     6	
+     7	def main():
+     8	    """main"""
+     9	    args = sys.argv[1:]
     10	
-    11	
-    12	# --------------------------------------------------
-    13	def main():
-    14	    args = sys.argv[1:]
-    15	
-    16	    if len(args) != 1:
-    17	        print('Usage: {} FILE'.format(os.path.basename(sys.argv[0])))
-    18	        sys.exit(1)
-    19	
-    20	    file = args[0]
-    21	
-    22	    if not os.path.isfile(file):
-    23	        print('{} is not a file'.format(file))
-    24	        sys.exit(1)
-    25	
-    26	    for i, line in enumerate(open(file), start=1):
-    27	        print('{:5}: {}'.format(i, line), end='')
+    11	    if len(args) != 1:
+    12	        print('Usage: {} DNA'.format(os.path.basename(sys.argv[0])))
+    13	        sys.exit(1)
+    14	
+    15	    dna = args[0]
+    16	
+    17	    num_a, num_c, num_g, num_t = 0, 0, 0, 0
+    18	
+    19	    for base in dna.lower():
+    20	        if base == 'a':
+    21	            num_a += 1
+    22	        elif base == 'c':
+    23	            num_c += 1
+    24	        elif base == 'g':
+    25	            num_g += 1
+    26	        elif base == 't':
+    27	            num_t += 1
     28	
-    29	
-    30	# --------------------------------------------------
+    29	    print('{} {} {} {}'.format(num_a, num_c, num_g, num_t))
+    30	
     31	if __name__ == '__main__':
     32	    main()
 ````
 
 \newpage
 
-# Chapter 18: Run-Length Encoding of DNA
+# Chapter 18: List Products to Find Recombinations
+
+Jumble promoter/coding/terminators.
+
+\newpage
+
+## Solution
+
+````
+     1	#!/usr/bin/env python3
+     2	"""Show recominations"""
+     3	
+     4	import os
+     5	import sys
+     6	from itertools import product
+     7	
+     8	
+     9	def die(msg):
+    10	    """print and exit with an error"""
+    11	    print(msg)
+    12	    sys.exit(1)
+    13	
+    14	
+    15	def main():
+    16	    """main"""
+    17	    args = sys.argv[1:]
+    18	
+    19	    if len(args) != 1:
+    20	        die('Usage: {} NUM_GENES'.format(os.path.basename(sys.argv[0])))
+    21	
+    22	    if not args[0].isdigit():
+    23	        die('"{}" does not look like an integer'.format(args[0]))
+    24	
+    25	    num_genes = int(args[0])
+    26	    if not 2 <= num_genes <= 10:
+    27	        die('NUM_GENES must be greater than 1, less than 10')
+    28	
+    29	    def gen(prefix):
+    30	        return [prefix + str(n) for n in range(1, num_genes + 1)]
+    31	
+    32	    print('N = "{}"'.format(num_genes))
+    33	    combos = product(gen('P'), gen('C'), gen('T'))
+    34	    for i, combo in enumerate(combos, start=1):
+    35	        print('{:4}: {}'.format(i, ' - '.join(combo)))
+    36	
+    37	
+    38	if __name__ == '__main__':
+    39	    main()
+````
+
+\newpage
+
+# Chapter 19: Strings: Run-Length Encoding of DNA
 
 Information content, compression, strings.
 
@@ -3465,7 +3764,7 @@ Information content, compression, strings.
 
 \newpage
 
-# Chapter 19: Sequence Length Columns
+# Chapter 20: Strings: Find and Format Sequence Lengths
 
 Change this to process short sequences.
 
@@ -3545,7 +3844,7 @@ adipoma              7
 
 \newpage
 
-# Chapter 20: Find Conversed Bases
+# Chapter 21: Strings: Find Conversed Bases in Aligned Sequences
 
 Multiple sequence alignment
 
@@ -3597,7 +3896,7 @@ Multiple sequence alignment
 
 \newpage
 
-# Chapter 21: Python Dictionaries
+# Chapter 22: Introduction to Python Dictionaries
 
 > Sometimes I feel like my job is deeply meaningful and then I remember that at the end of the day most of what I do is asking students to read error messages from compilers. -- Kristopher Micinski
 
@@ -4548,9 +4847,9 @@ Our word counting program thought these two texts only 76% similar, but our kmer
 
 \newpage
 
-# Chapter 22: Using Dictionaries to Count Character Frequency
+# Chapter 23: Count Character Frequency with Dictionaries 
 
-It's good.
+Improvement over GC content.
 
 \newpage
 
@@ -4662,9 +4961,9 @@ It's good.
 
 \newpage
 
-# Chapter 23: Using Dictionaries to Count Word Frequency
+# Chapter 24: Word Frequency with Dictionaries 
 
-
+Does not include Hamming.
 
 \newpage
 
@@ -4743,7 +5042,7 @@ It's good.
 
 \newpage
 
-# Chapter 24: Character Frequency Histogram
+# Chapter 25: Character Frequency Histogram
 
 Write a Python program called `histy.py` that takes a single positional argument that may be plain text or the name of a file to read for the text. Count the frequency of each character (not spaces) and print a histogram of the data. By default, you should order the histogram by the characters but include `-f|--frequency_sort` option to sort by the frequency (in descending order). Also include a `-c|--character` option (default `|`) to represent a mark in the histogram, a `-m|--minimum` option (default `1`) to include a character in the output, a `-w|--width` option (default `70`) to limit the size of the histogram, and a `-i|--case_insensitive` flag to force all input to uppercase.
 
@@ -4918,7 +5217,7 @@ W    375 ###
 
 \newpage
 
-# Chapter 25: Amino Acid Translation
+# Chapter 26: Amino Acid Translation
 
 Using dict!
 
@@ -4973,7 +5272,7 @@ Using dict!
 
 \newpage
 
-# Chapter 26: Translate DNA/RNA to Amino Acids
+# Chapter 27: Translate DNA/RNA to Amino Acids
 
 Write a Python program called `translate_proteins.py` that translates a given DNA/RNA sequence to amino acids using a provided codon table. The output will be written to a file either provided by the user or a default of "out.txt". 
 
@@ -5147,7 +5446,36 @@ The "Python Patterns" has an example of how to "Extract Codons from DNA" that wi
 
 \newpage
 
-# Chapter 27: Parsing BLAST -outfmt 6
+# Chapter 28: Parsing Files with Python
+
+## CSV
+
+SRA metadata.
+
+Excel, CSV, tab-delimited.
+
+## Bioinformatics File Formats
+
+* FASTA
+* FASTQ
+* EMBL
+* GenBank
+* Muscle
+* GFF
+* SwissProt
+
+## BioPython Parsers
+
+## Data Exchange Formats on the Web
+
+PubMed, NCBI Taxonomy, APIs
+
+* JSON
+* XML
+
+\newpage
+
+# Chapter 29: Parsing BLAST -outfmt 6
 
 Write a Python program called "blastomatic.py" that takes a BLAST hits file (-outfmt 6, tab-delimited format) as a single positional argument and a named "--annotations" argument that is an annotations file that gives genus and species information for a given sequence ID. Check that both are actually files and die '"XXX" is not a file' if they are not. Iterate over the BLAST hits and use the sequence ID (`saccver`) to lookup the sequence in the annotations file so that you can print out the seq ID and the percent identity (`pident`) from the hits file along with the `genus` and `species` from the annotations file.
 
@@ -5362,7 +5690,7 @@ bfb6f5dfb4d0ef0842be8f5df6c86459  99.567  Prochlorococcus  MIT9313  NA
 
 \newpage
 
-# Chapter 28: Summarize Centrifuge Hits by Tax Name
+# Chapter 30: Summarize Centrifuge Hits by Tax Name
 
 
 
@@ -5418,7 +5746,7 @@ bfb6f5dfb4d0ef0842be8f5df6c86459  99.567  Prochlorococcus  MIT9313  NA
 
 \newpage
 
-# Chapter 29: Find Pairwise Sample Geographic Distance
+# Chapter 31: Find Pairwise Sample Geographic Distance
 
 Given a list of sample/lat/lon, find/filter all pairwise sample distances.
 
@@ -5676,7 +6004,7 @@ alias blast6chk='tabchk.py -f "qseqid,sseqid,pident,length,mismatch,gapopen,qsta
 
 \newpage
 
-# Chapter 31: tab2json.py
+# Chapter 33: tab2json.py
 
 At some point I must have needed to turn a flat, delimited text file into a hierarchical, JSON structured, but I cannot at this moment remember why. Anyway, here's a program that will do that.
 
@@ -5790,7 +6118,7 @@ At some point I must have needed to turn a flat, delimited text file into a hier
 
 \newpage
 
-# Chapter 32: FASTA Summary With Seqmagique
+# Chapter 34: FASTA Summary With Seqmagique
 
 Now let's finally get into parsing good, old FASTA files.  We're going to need to install the BioPython (http://biopython.org/) module to get a FASTA parser.  This should work for you:
 
@@ -5899,7 +6227,7 @@ The code to produce this builds on our earlier skills of lists and dictionaries 
 
 \newpage
 
-# Chapter 33: FASTA subset
+# Chapter 35: FASTA subset
 
 Sometimes you may only want to use part of a FASTA file, e.g., you want the first 1000 sequences to test some code, or you have samples that vary wildly in size and you want to sub-sample them down to an equal number of reads.  Here is a Python program that will write the first N samples to a given output directory:
 
@@ -6037,7 +6365,7 @@ Sometimes you may only want to use part of a FASTA file, e.g., you want the firs
 
 \newpage
 
-# Chapter 34: Randomly Subset a FASTA file
+# Chapter 36: Randomly Subset a FASTA file
 
 Here is a version that will randomly select some percentage of the reads from the input file. I had to write this version because we had created an artificial metagenome from a set of known organisms, and I was testing a program with input of various numbers of reads. I did not realize at first that, in creating the artificial set, reads from each organism had been added in blocks. Since I was taking all my reads from the top of the file down, I was mostly getting just the first few species. Randomly selecting reads when there are potentially millions of records is a bit tricky, so I decided to use a non-deterministic approach where I just roll the dice and see if the number I get on each read is less than the percentage of reads I want to take. This program will also stop at a given number of reads so you could use it to randomly subset an unevenly sized number of samples down to the same number of reads per sample.
 
@@ -6182,7 +6510,7 @@ Here is a version that will randomly select some percentage of the reads from th
 
 \newpage
 
-# Chapter 35: FASTA splitter
+# Chapter 37: FASTA splitter
 
 I seem to have implemented my own FASTA splitter a few times in as many languages.  Here is one that writes a maximum number of sequences to each output file.  It would not be hard to instead write a maximum number of bytes, but, for the short reads I usually handle, this works fine.  Again I will use the BioPython `SeqIO` module to parse the FASTA files.
 
@@ -6397,9 +6725,9 @@ fasplit/CAM_SMPL_GS112.0010.fa      50
 
 \newpage
 
-# Chapter 36: Python FASTA GC Segregator
+# Chapter 38: FASTA Segregator by GC Content
 
-Write a Python program called "gc.py" that takes 
+Write a Python program called `gc.py` that takes 
 
 * One or more FASTA files as positional arguments
 * An option `-o|--outdir` directory name to write the output (default "out")
@@ -6558,7 +6886,7 @@ Look back at the many examples of counting DNA to pick a method you like to coun
 
 \newpage
 
-# Chapter 37: FASTA Interleaved Paired Read Splitter
+# Chapter 39: FASTA Interleaved Paired Read Splitter
 
 Some sequencing platforms (e.g., Illumina) will create read pairs (forward/reverse) that may be interleaved together into one file with the forward read immediately followed by the reverse read or the reads may be in two separate files like `foo_1.fastq` and `foo_2.fastq` where `_1` is the forward read file and `_2` contains the reverse reads (or sometimes `_R1`/`_R2`). 
 
@@ -6685,7 +7013,7 @@ $ ./au_pair.py inputs/* -o all
 
 \newpage
 
-# Chapter 38: FASTQ to FASTA
+# Chapter 40: FASTQ to FASTA
 
 FASTA (sequence) plus "quality" scores for each base call gives us "FASTQ." Here is an example:
 
@@ -6865,7 +7193,7 @@ Can you write one in Python?
 
 \newpage
 
-# Chapter 39: Concatenate FASTX Files
+# Chapter 41: Concatenate FASTX Files
 
 Given a directory/list of FASTQ/A files like this:
 
@@ -7046,7 +7374,7 @@ Turn it into this:
 
 \newpage
 
-# Chapter 40: Parsing GFF
+# Chapter 42: Parsing GFF
 
 Two of the most common output files in bioinformatics, GFF (General Feature Format) and BLAST's tab/CSV files do not include headers, so it's up to you to merge in the headers.  Additionally, some of the lines may be comments (they start with `#` just like bash and Python), so you should skip those.  Further, the last field in GFF is basically a dumping ground for whatever else the data provider felt like putting there.  Usually it's a bunch of "key=value" pairs, but there's no guarantee.  Let's take a look at parsing the GFF output from Prodigal:
 
@@ -7139,7 +7467,7 @@ Two of the most common output files in bioinformatics, GFF (General Feature Form
 
 \newpage
 
-# Chapter 41: Parsing NCBI Taxonomy XML
+# Chapter 43: Parsing NCBI Taxonomy XML
 
 Here's an example that looks at XML from the NCBI taxonomy. Here is what the raw file looks like:
 
@@ -7272,7 +7600,7 @@ attr.ENA-LAST-UPDATE     : 2018-08-15
 
 \newpage
 
-# Chapter 42: Fetching and Parsing PubMed JSON
+# Chapter 44: Fetching and Parsing PubMed JSON
 
 Oh yeah.
 
@@ -7351,7 +7679,7 @@ Oh yeah.
 
 \newpage
 
-# Chapter 43: Parsing SwissProt
+# Chapter 45: Parsing SwissProt
 
 The SwissProt format is one, like GenBank and EMBL, that allows for detailed annotation of a sequence whereas FASTA/Q are primarily devoted to the sequence/quality and sometimes metadata/annotations are crudely shoved into the header line. Parsing SwissProt, however, is no more difficult thanks to the `SeqIO` module. Most of the interesting non-sequence data is in the `annotations` which is a dictionary where the keys are strings like "accessions" and "keywords" and the values are ints, strings, and lists.
 
@@ -7433,7 +7761,7 @@ You should look at the sample "input.swiss" file to get a greater understanding 
 
 \newpage
 
-# Chapter 44: Find Overlapping Genes in GFF
+# Chapter 46: Find Overlapping Genes in GFF
 
 
 
@@ -7567,7 +7895,7 @@ You should look at the sample "input.swiss" file to get a greater understanding 
 
 \newpage
 
-# Chapter 45: Parsing SwissProt
+# Chapter 47: Parsing SwissProt
 
 > “Without requirements or design, programming is the art of adding bugs to an empty text file." - Louis Srygley
 
@@ -7822,7 +8150,7 @@ Keep this in mind when you are trying to find if there is an intersection of the
 
 \newpage
 
-# Chapter 46: Filter FASTA by Taxonomy
+# Chapter 48: Filter FASTA by Taxonomy
 
 Given a FASTA file, filter for those sequences in the given tax list.
 
@@ -7965,7 +8293,7 @@ Given a FASTA file, filter for those sequences in the given tax list.
 
 \newpage
 
-# Chapter 47: Filter Reads by Centrifuge Taxa Classification
+# Chapter 49: Filter Reads by Centrifuge Taxa Classification
 
 
 
@@ -8079,7 +8407,7 @@ Given a FASTA file, filter for those sequences in the given tax list.
 
 \newpage
 
-# Chapter 48: Fetching and Parsing PubMed JSON
+# Chapter 50: Fetching and Parsing PubMed JSON
 
 Oh yeah.
 
@@ -8158,7 +8486,7 @@ Oh yeah.
 
 \newpage
 
-# Chapter 49: Find Unclustered Proteins with Python
+# Chapter 51: Find Unclustered Proteins with Python
 
 Run `make data` to get the data you need for this exercise or manually download the data:
 
@@ -8372,7 +8700,7 @@ Once you know which protein IDs were clustered, go through the `proteins.fa` fil
 
 \newpage
 
-# Chapter 50: Expanding IUPAC with Regular Expression
+# Chapter 52: Expanding DNA IUPAC Codes with Regular Expression
 
 Write a program called `iupac.py` that translates an IUPAC-encoded (https://www.bioinformatics.org/sms/iupac.html) string of DNA into a regular expression that will match all the possible strings of DNA that match.
 
@@ -8528,7 +8856,7 @@ CGT OK
 
 \newpage
 
-# Chapter 51: Date Parsing with Regular Expressions 
+# Chapter 53: Parsing Date Formats with Regular Expressions 
 
 Write a Python program called `dates.py` that takes as a single, positional argument a string and attempt to parse it as one of the given date formats. If given no argument, it should print a usage statement. It does not need to respond to `-h|--help`, so you could use `new_py.py` without the argparse flag.
 
@@ -8674,395 +9002,7 @@ While there are date parsing modules, I do not want you to use those in your cod
 
 \newpage
 
-# Chapter 52: Centrifuge Pipeline in Python
-
-\newpage
-
-## Solution
-
-````
-     1	#!/usr/bin/env python3
-     2	"""Run Centrifuge"""
-     3	
-     4	import argparse
-     5	import os
-     6	import re
-     7	import subprocess
-     8	import sys
-     9	import tempfile as tmp
-    10	
-    11	
-    12	# --------------------------------------------------
-    13	def get_args():
-    14	    """Get command-line args"""
-    15	
-    16	    parser = argparse.ArgumentParser(
-    17	        description='Argparse Python script',
-    18	        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    19	
-    20	    parser.add_argument(
-    21	        '-q',
-    22	        '--query',
-    23	        help='File or directory of input',
-    24	        metavar='str',
-    25	        type=str,
-    26	        action='append',
-    27	        required=True)
-    28	
-    29	    parser.add_argument(
-    30	        '-r',
-    31	        '--reads_are_paired',
-    32	        help='Expect forward/reverse (1/2) reads in --query',
-    33	        action='store_true')
-    34	
-    35	    parser.add_argument(
-    36	        '-f',
-    37	        '--format',
-    38	        help='Input file format',
-    39	        metavar='str',
-    40	        type=str,
-    41	        default='')
-    42	
-    43	    parser.add_argument(
-    44	        '-i',
-    45	        '--index',
-    46	        help='Centrifuge index name',
-    47	        metavar='str',
-    48	        type=str,
-    49	        default='p_compressed+h+v')
-    50	
-    51	    parser.add_argument(
-    52	        '-I',
-    53	        '--index_dir',
-    54	        help='Centrifuge index directory',
-    55	        metavar='str',
-    56	        type=str,
-    57	        default='')
-    58	
-    59	    parser.add_argument(
-    60	        '-o',
-    61	        '--out_dir',
-    62	        help='Output directory',
-    63	        metavar='str',
-    64	        type=str,
-    65	        default=os.path.join(os.getcwd(), 'centrifuge-out'))
-    66	
-    67	    parser.add_argument(
-    68	        '-x',
-    69	        '--exclude_tax_ids',
-    70	        help='Comma-separated list of tax ids to exclude',
-    71	        metavar='str',
-    72	        type=str,
-    73	        default='')
-    74	
-    75	    parser.add_argument(
-    76	        '-T',
-    77	        '--figure_title',
-    78	        help='Title for the bubble chart',
-    79	        metavar='str',
-    80	        type=str,
-    81	        default='Species abundance by sample')
-    82	
-    83	    parser.add_argument(
-    84	        '-t',
-    85	        '--threads',
-    86	        help='Num of threads per instance of centrifuge',
-    87	        metavar='int',
-    88	        type=int,
-    89	        default=1)
-    90	
-    91	    parser.add_argument(
-    92	        '-P',
-    93	        '--procs',
-    94	        help='Max number of processes to run',
-    95	        metavar='int',
-    96	        type=int,
-    97	        default=4)
-    98	
-    99	    return parser.parse_args()
-   100	
-   101	
-   102	# --------------------------------------------------
-   103	def main():
-   104	    """Start here"""
-   105	
-   106	    args = get_args()
-   107	    out_dir = args.out_dir
-   108	    index_dir = args.index_dir
-   109	    index_name = args.index
-   110	    file_format = args.format
-   111	
-   112	    if not index_dir:
-   113	        print('--index_dir is required')
-   114	        sys.exit(1)
-   115	
-   116	    if not index_name:
-   117	        print('--index_name is required')
-   118	        sys.exit(1)
-   119	
-   120	    if not os.path.isdir(index_dir):
-   121	        die('--index_dir "{}" is not a directory'.format(index_dir))
-   122	
-   123	    valid_index = set(
-   124	        map(lambda s: re.sub(r'\.\d+\.cf$', '', os.path.basename(s)),
-   125	            os.listdir(index_dir)))
-   126	
-   127	    if not index_name in valid_index:
-   128	        tmpl = '--index "{}" is not valid, please choose from: {}'
-   129	        die(tmpl.format(index_name, ', '.join(sorted(valid_index))))
-   130	
-   131	    if not os.path.isdir(out_dir):
-   132	        os.makedirs(out_dir)
-   133	
-   134	    input_files = find_input_files(args.query, args.reads_are_paired)
-   135	
-   136	    if not file_format:
-   137	        exts = set()
-   138	        for direction in input_files:
-   139	            for file in input_files[direction]:
-   140	                base = re.sub(r'\.gz$', '', os.path.basename(file))
-   141	                _, ext = os.path.splitext(base)
-   142	                exts.add(re.sub(r'^\.', '', ext))
-   143	
-   144	        guesses = set()
-   145	        for ext in exts:
-   146	            if re.match(r'f(?:ast|n)?a', ext):
-   147	                guesses.add('fasta')
-   148	            elif re.match(r'f(?:ast)?q', ext):
-   149	                guesses.add('fastq')
-   150	
-   151	        if len(guesses) == 1:
-   152	            file_format = guesses.pop()
-   153	        else:
-   154	            msg = 'Cannot guess file format ({}) from extentions ({})'
-   155	            die(msg.format(', '.join(guesses), ', '.join(exts)))
-   156	
-   157	    valid_format = set(['fasta', 'fastq'])
-   158	    if not file_format in valid_format:
-   159	        msg = '--format "{}" is not valid, please choose from {}'
-   160	        die(msg.format(file_format, ', '.join(valid_format)))
-   161	
-   162	    msg = 'Files found: forward = "{}", reverse = "{}", unpaired = "{}"'
-   163	    print(
-   164	        msg.format(
-   165	            len(input_files['forward']), len(input_files['reverse']),
-   166	            len(input_files['unpaired'])))
-   167	
-   168	    reports_dir = run_centrifuge(
-   169	        file_format=file_format,
-   170	        files=input_files,
-   171	        out_dir=out_dir,
-   172	        exclude_tax_ids=args.exclude_tax_ids,
-   173	        index_dir=index_dir,
-   174	        index_name=index_name,
-   175	        threads=args.threads,
-   176	        procs=args.procs)
-   177	
-   178	    fig_dir = make_bubble(
-   179	        reports_dir=reports_dir, out_dir=out_dir, title=args.figure_title)
-   180	
-   181	    print('Done, reports in "{}", figures in "{}"'.format(
-   182	        reports_dir, fig_dir))
-   183	
-   184	
-   185	# --------------------------------------------------
-   186	def warn(msg):
-   187	    """Print a message to STDERR"""
-   188	
-   189	    print(msg, file=sys.stderr)
-   190	
-   191	
-   192	# --------------------------------------------------
-   193	def die(msg='Something went wrong'):
-   194	    """Print a message to STDERR and exit with error"""
-   195	
-   196	    warn('Error: {}'.format(msg))
-   197	    sys.exit(1)
-   198	
-   199	
-   200	# --------------------------------------------------
-   201	def unique_extensions(files):
-   202	    exts = set()
-   203	    for file in files:
-   204	        _, ext = os.path.splitext(file)
-   205	        exts.add(ext[1:])  # skip leading "."
-   206	
-   207	    return exts
-   208	
-   209	
-   210	# --------------------------------------------------
-   211	def find_input_files(query, reads_are_paired):
-   212	    """Find input files from list of files/dirs"""
-   213	
-   214	    files = []
-   215	    for qry in query:
-   216	        if os.path.isdir(qry):
-   217	            for filename in os.scandir(qry):
-   218	                if filename.is_file():
-   219	                    files.append(filename.path)
-   220	        elif os.path.isfile(qry):
-   221	            files.append(qry)
-   222	        else:
-   223	            die('--query "{}" neither file nor directory'.format(qry))
-   224	
-   225	    files.sort()  # inplace
-   226	
-   227	    forward = []
-   228	    reverse = []
-   229	    unpaired = []
-   230	
-   231	    if reads_are_paired:
-   232	        extensions = unique_extensions(files)
-   233	        re_tmpl = '.+[_-][Rr]?{}\.(?:' + '|'.join(extensions) + ')$'
-   234	        forward_re = re.compile(re_tmpl.format('1'))
-   235	        reverse_re = re.compile(re_tmpl.format('2'))
-   236	
-   237	        for fname in files:
-   238	            if forward_re.search(fname):
-   239	                forward.append(fname)
-   240	            elif reverse_re.search(fname):
-   241	                reverse.append(fname)
-   242	            else:
-   243	                unpaired.append(fname)
-   244	
-   245	        num_forward = len(forward)
-   246	        num_reverse = len(reverse)
-   247	
-   248	        if num_forward and num_reverse and num_forward != num_reverse:
-   249	            msg = 'Number of forward ({}) and reverse ({}) reads do not match'
-   250	            die(msg.format(num_forward, num_reverse))
-   251	
-   252	    else:
-   253	        unpaired = files
-   254	
-   255	    return {'forward': forward, 'reverse': reverse, 'unpaired': unpaired}
-   256	
-   257	
-   258	# --------------------------------------------------
-   259	def line_count(fname):
-   260	    """Count the number of lines in a file"""
-   261	
-   262	    n = 0
-   263	    for _ in open(fname):
-   264	        n += 1
-   265	
-   266	    return n
-   267	
-   268	
-   269	# --------------------------------------------------
-   270	def run_job_file(jobfile, msg='Running job', procs=1):
-   271	    """Run a job file if there are jobs"""
-   272	
-   273	    num_jobs = line_count(jobfile)
-   274	    warn('{} (# jobs = {})'.format(msg, num_jobs))
-   275	
-   276	    if num_jobs > 0:
-   277	        cmd = 'parallel --halt soon,fail=1 -P {} < {}'.format(procs, jobfile)
-   278	
-   279	        try:
-   280	            subprocess.run(cmd, shell=True, check=True)
-   281	        except subprocess.CalledProcessError as err:
-   282	            die('Error:\n{}\n{}\n'.format(err.stderr, err.stdout))
-   283	        finally:
-   284	            os.remove(jobfile)
-   285	
-   286	    return True
-   287	
-   288	
-   289	# --------------------------------------------------
-   290	def run_centrifuge(**args):
-   291	    """Run Centrifuge"""
-   292	
-   293	    file_format = args['file_format']
-   294	    files = args['files']
-   295	    exclude_ids = get_excluded_tax(args['exclude_tax_ids'])
-   296	    index_name = args['index_name']
-   297	    index_dir = args['index_dir']
-   298	    out_dir = args['out_dir']
-   299	    threads = args['threads']
-   300	    procs = args['procs']
-   301	
-   302	    reports_dir = os.path.join(out_dir, 'reports')
-   303	
-   304	    if not os.path.isdir(reports_dir):
-   305	        os.makedirs(reports_dir)
-   306	
-   307	    jobfile = tmp.NamedTemporaryFile(delete=False, mode='wt')
-   308	    exclude_arg = '--exclude-taxids ' + exclude_ids if exclude_ids else ''
-   309	    format_arg = '-f' if file_format == 'fasta' else ''
-   310	
-   311	    cmd_tmpl = 'CENTRIFUGE_INDEXES={} centrifuge {} {} -p {} -x {} '
-   312	    cmd_base = cmd_tmpl.format(index_dir, exclude_arg, format_arg, threads,
-   313	                               index_name)
-   314	
-   315	    for file in files['unpaired']:
-   316	        basename = os.path.basename(file)
-   317	        tsv_file = os.path.join(reports_dir, basename + '.tsv')
-   318	        sum_file = os.path.join(reports_dir, basename + '.sum')
-   319	        tmpl = cmd_base + '-U "{}" -S "{}" --report-file "{}"\n'
-   320	        if not os.path.isfile(tsv_file):
-   321	            jobfile.write(tmpl.format(file, sum_file, tsv_file))
-   322	
-   323	    for i, file in enumerate(files['forward']):
-   324	        basename = os.path.basename(file)
-   325	        tsv_file = os.path.join(reports_dir, basename + '.tsv')
-   326	        sum_file = os.path.join(reports_dir, basename + '.sum')
-   327	        tmpl = cmd_base + '-1 "{}" -2 "{}" -S "{}" --report-file "{}"\n'
-   328	        if not os.path.isfile(tsv_file):
-   329	            jobfile.write(
-   330	                tmpl.format(file, files['reverse'][i], sum_file, tsv_file))
-   331	
-   332	    jobfile.close()
-   333	
-   334	    run_job_file(jobfile=jobfile.name, msg='Running Centrifuge', procs=procs)
-   335	
-   336	    return reports_dir
-   337	
-   338	
-   339	# --------------------------------------------------
-   340	def get_excluded_tax(ids):
-   341	    """Verify the ids look like numbers"""
-   342	
-   343	    tax_ids = []
-   344	
-   345	    if ids:
-   346	        for s in [x.strip() for x in ids.split(',')]:
-   347	            if s.isnumeric():
-   348	                tax_ids.append(s)
-   349	            else:
-   350	                warn('tax_id "{}" is not numeric'.format(s))
-   351	
-   352	    return ','.join(tax_ids)
-   353	
-   354	
-   355	# --------------------------------------------------
-   356	def make_bubble(reports_dir, out_dir, title):
-   357	    """Make bubble chart"""
-   358	
-   359	    fig_dir = os.path.join(out_dir, 'figures')
-   360	
-   361	    if not os.path.isdir(fig_dir):
-   362	        os.makedirs(fig_dir)
-   363	
-   364	    cur_dir = os.path.dirname(os.path.realpath(__file__))
-   365	    bubble = os.path.join(cur_dir, 'centrifuge_bubble.r')
-   366	    tmpl = '{} --dir "{}" --title "{}" --outdir "{}"'
-   367	    job = tmpl.format(bubble, reports_dir, title, fig_dir)
-   368	    warn(job)
-   369	
-   370	    subprocess.run(job, shell=True)
-   371	
-   372	    return fig_dir
-   373	
-   374	
-   375	# --------------------------------------------------
-   376	if __name__ == '__main__':
-   377	    main()
-````
-
-\newpage
-
-# Chapter 53: SQLite in Python
+# Chapter 54: SQLite in Python
 
 SQLite (https://www.sqlite.org) is a lightweight, SQL/relational database that is available by default with Python (https://docs.python.org/3/library/sqlite3.html).  By using `import sqlite3` you can interact with an SQLite database.  So, let's create one, returning to our earlier Centrifuge output.  Here is the file "tables.sql" containing the SQL statements needed to drop and create the tables:
 
@@ -9582,7 +9522,7 @@ YELLOWSTONE_SMPL_20723  Synechococcus sp. JA-3-3Ab         6432         0.98
 
 \newpage
 
-# Chapter 54: Finding Longhurst Province
+# Chapter 55: Finding Longhurst Province Using GeoJSON
 
 Using shapes
 
@@ -9618,7 +9558,7 @@ Using shapes
 
 \newpage
 
-# Chapter 55: Finding K-mers in Text
+# Chapter 56: Finding K-mers in Text
 
 ````
 $ ./kmer_tiler.py foobar
@@ -9662,7 +9602,7 @@ foo
 
 \newpage
 
-# Chapter 56: De Bruijn Graphs in Python
+# Chapter 57: Using De Bruijn Graphs to Assemble Sequences
 
 We will find paths through sequences that could aid in assembly (cf http://rosalind.info/problems/grph/). For this exercise, we will only attempt to join any two sequences together. To do this, we will look at the last `k` characters of every sequence and find where the first `k` character of a *different* sequence are the same. 
 
@@ -9801,7 +9741,7 @@ You will write a Python program called `grph.py` which will take a `-k|--overlap
 
 \newpage
 
-# Chapter 57: Find Common Words with Mismatches
+# Chapter 58: Find Sequences With Point Mutations (SNPs)
 
 Write a Python program called `commoner.py` that takes exactly two positional arguments which should be text files that you will read and find words that are found to be in common. The program should also accept a `-m|--min_len` option (integer) which is the minimum length for a word to be included (so that we can avoid common short words like articles and "I", etc.) as well as a `-n|--hamming_distance` (integer) value that is the maximum allowed Hamming (edit) distance to consider two words to be the same. There should also be two options for debugging, one `-d|--debug` that turns on logging into a `-l|--logfile` option that defaults to `.log`. Lastly, the program should have a `-t|--table` option that indicates the output should be formatted into an ASCII table using the `tabulate` module (https://pypi.org/project/tabulate/); the default output (that is, without `-t`) should be tab-delimited text.
 
@@ -10187,7 +10127,7 @@ The Makefile's `test` target is `pytest -v commoner.py test.py`. Notice how it's
 
 \newpage
 
-# Chapter 58: Sequence Similarity Using Shared k-mers
+# Chapter 59: Sequence Similarity Using Shared k-mers
 
 Another way to explore sequence similarity.
 
@@ -10255,7 +10195,7 @@ Another way to explore sequence similarity.
 
 \newpage
 
-# Chapter 59: Species Abundance Bubble Plot
+# Chapter 60: Species Abundance Bubble Plot
 
 Centrifuge is a program that will make taxonomic assignments to short DNA reads. Write a program called `plot.py` that will read the `.tsv` output file from Centrifuge that gives a summary of the species and abundance for a given sample. The program should take the output directory containing a number of samples and use `matplotlib` to create a bubble plot showing the abundance of taxa at various `-r|--rank` assignments.
 
@@ -10437,7 +10377,7 @@ optional arguments:
 
 \newpage
 
-# Chapter 60: Writing Pipelines in Python
+# Chapter 61: Writing Pipelines in Python
 
 > Falling in love with code means falling in love with problem solving and being a part of a forever ongoing conversation. -- Kathryn Barrett
 
@@ -10719,13 +10659,13 @@ Done.
 The `parallel` version looks out of order because the jobs are run as quickly as possible in whatever order that happens.
 \newpage
 
-# Chapter 61: BLAST Pipeline in Python
+# Chapter 62: BLAST Pipeline
 
 Everyone needs a thneed.
 
 \newpage
 
-# Chapter 62: CD-HIT Pipeline
+# Chapter 63: CD-HIT Pipeline
 
 Let's take the `cd-hit` cluster exercise and extend it to where we take the proteins FASTA, run cd-hit, and find the unclustered proteins all in one go. First things first, we need to ensure `cd-hit` is on our system. It's highly unlikely that it is, so let's figure out how to install it.
 
@@ -10952,6 +10892,394 @@ Now we can try out our new code:
    172	# --------------------------------------------------
    173	if __name__ == '__main__':
    174	    main()
+````
+
+\newpage
+
+# Chapter 64: Centrifuge Pipeline in Python
+
+\newpage
+
+## Solution
+
+````
+     1	#!/usr/bin/env python3
+     2	"""Run Centrifuge"""
+     3	
+     4	import argparse
+     5	import os
+     6	import re
+     7	import subprocess
+     8	import sys
+     9	import tempfile as tmp
+    10	
+    11	
+    12	# --------------------------------------------------
+    13	def get_args():
+    14	    """Get command-line args"""
+    15	
+    16	    parser = argparse.ArgumentParser(
+    17	        description='Argparse Python script',
+    18	        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    19	
+    20	    parser.add_argument(
+    21	        '-q',
+    22	        '--query',
+    23	        help='File or directory of input',
+    24	        metavar='str',
+    25	        type=str,
+    26	        action='append',
+    27	        required=True)
+    28	
+    29	    parser.add_argument(
+    30	        '-r',
+    31	        '--reads_are_paired',
+    32	        help='Expect forward/reverse (1/2) reads in --query',
+    33	        action='store_true')
+    34	
+    35	    parser.add_argument(
+    36	        '-f',
+    37	        '--format',
+    38	        help='Input file format',
+    39	        metavar='str',
+    40	        type=str,
+    41	        default='')
+    42	
+    43	    parser.add_argument(
+    44	        '-i',
+    45	        '--index',
+    46	        help='Centrifuge index name',
+    47	        metavar='str',
+    48	        type=str,
+    49	        default='p_compressed+h+v')
+    50	
+    51	    parser.add_argument(
+    52	        '-I',
+    53	        '--index_dir',
+    54	        help='Centrifuge index directory',
+    55	        metavar='str',
+    56	        type=str,
+    57	        default='')
+    58	
+    59	    parser.add_argument(
+    60	        '-o',
+    61	        '--out_dir',
+    62	        help='Output directory',
+    63	        metavar='str',
+    64	        type=str,
+    65	        default=os.path.join(os.getcwd(), 'centrifuge-out'))
+    66	
+    67	    parser.add_argument(
+    68	        '-x',
+    69	        '--exclude_tax_ids',
+    70	        help='Comma-separated list of tax ids to exclude',
+    71	        metavar='str',
+    72	        type=str,
+    73	        default='')
+    74	
+    75	    parser.add_argument(
+    76	        '-T',
+    77	        '--figure_title',
+    78	        help='Title for the bubble chart',
+    79	        metavar='str',
+    80	        type=str,
+    81	        default='Species abundance by sample')
+    82	
+    83	    parser.add_argument(
+    84	        '-t',
+    85	        '--threads',
+    86	        help='Num of threads per instance of centrifuge',
+    87	        metavar='int',
+    88	        type=int,
+    89	        default=1)
+    90	
+    91	    parser.add_argument(
+    92	        '-P',
+    93	        '--procs',
+    94	        help='Max number of processes to run',
+    95	        metavar='int',
+    96	        type=int,
+    97	        default=4)
+    98	
+    99	    return parser.parse_args()
+   100	
+   101	
+   102	# --------------------------------------------------
+   103	def main():
+   104	    """Start here"""
+   105	
+   106	    args = get_args()
+   107	    out_dir = args.out_dir
+   108	    index_dir = args.index_dir
+   109	    index_name = args.index
+   110	    file_format = args.format
+   111	
+   112	    if not index_dir:
+   113	        print('--index_dir is required')
+   114	        sys.exit(1)
+   115	
+   116	    if not index_name:
+   117	        print('--index_name is required')
+   118	        sys.exit(1)
+   119	
+   120	    if not os.path.isdir(index_dir):
+   121	        die('--index_dir "{}" is not a directory'.format(index_dir))
+   122	
+   123	    valid_index = set(
+   124	        map(lambda s: re.sub(r'\.\d+\.cf$', '', os.path.basename(s)),
+   125	            os.listdir(index_dir)))
+   126	
+   127	    if not index_name in valid_index:
+   128	        tmpl = '--index "{}" is not valid, please choose from: {}'
+   129	        die(tmpl.format(index_name, ', '.join(sorted(valid_index))))
+   130	
+   131	    if not os.path.isdir(out_dir):
+   132	        os.makedirs(out_dir)
+   133	
+   134	    input_files = find_input_files(args.query, args.reads_are_paired)
+   135	
+   136	    if not file_format:
+   137	        exts = set()
+   138	        for direction in input_files:
+   139	            for file in input_files[direction]:
+   140	                base = re.sub(r'\.gz$', '', os.path.basename(file))
+   141	                _, ext = os.path.splitext(base)
+   142	                exts.add(re.sub(r'^\.', '', ext))
+   143	
+   144	        guesses = set()
+   145	        for ext in exts:
+   146	            if re.match(r'f(?:ast|n)?a', ext):
+   147	                guesses.add('fasta')
+   148	            elif re.match(r'f(?:ast)?q', ext):
+   149	                guesses.add('fastq')
+   150	
+   151	        if len(guesses) == 1:
+   152	            file_format = guesses.pop()
+   153	        else:
+   154	            msg = 'Cannot guess file format ({}) from extentions ({})'
+   155	            die(msg.format(', '.join(guesses), ', '.join(exts)))
+   156	
+   157	    valid_format = set(['fasta', 'fastq'])
+   158	    if not file_format in valid_format:
+   159	        msg = '--format "{}" is not valid, please choose from {}'
+   160	        die(msg.format(file_format, ', '.join(valid_format)))
+   161	
+   162	    msg = 'Files found: forward = "{}", reverse = "{}", unpaired = "{}"'
+   163	    print(
+   164	        msg.format(
+   165	            len(input_files['forward']), len(input_files['reverse']),
+   166	            len(input_files['unpaired'])))
+   167	
+   168	    reports_dir = run_centrifuge(
+   169	        file_format=file_format,
+   170	        files=input_files,
+   171	        out_dir=out_dir,
+   172	        exclude_tax_ids=args.exclude_tax_ids,
+   173	        index_dir=index_dir,
+   174	        index_name=index_name,
+   175	        threads=args.threads,
+   176	        procs=args.procs)
+   177	
+   178	    fig_dir = make_bubble(
+   179	        reports_dir=reports_dir, out_dir=out_dir, title=args.figure_title)
+   180	
+   181	    print('Done, reports in "{}", figures in "{}"'.format(
+   182	        reports_dir, fig_dir))
+   183	
+   184	
+   185	# --------------------------------------------------
+   186	def warn(msg):
+   187	    """Print a message to STDERR"""
+   188	
+   189	    print(msg, file=sys.stderr)
+   190	
+   191	
+   192	# --------------------------------------------------
+   193	def die(msg='Something went wrong'):
+   194	    """Print a message to STDERR and exit with error"""
+   195	
+   196	    warn('Error: {}'.format(msg))
+   197	    sys.exit(1)
+   198	
+   199	
+   200	# --------------------------------------------------
+   201	def unique_extensions(files):
+   202	    exts = set()
+   203	    for file in files:
+   204	        _, ext = os.path.splitext(file)
+   205	        exts.add(ext[1:])  # skip leading "."
+   206	
+   207	    return exts
+   208	
+   209	
+   210	# --------------------------------------------------
+   211	def find_input_files(query, reads_are_paired):
+   212	    """Find input files from list of files/dirs"""
+   213	
+   214	    files = []
+   215	    for qry in query:
+   216	        if os.path.isdir(qry):
+   217	            for filename in os.scandir(qry):
+   218	                if filename.is_file():
+   219	                    files.append(filename.path)
+   220	        elif os.path.isfile(qry):
+   221	            files.append(qry)
+   222	        else:
+   223	            die('--query "{}" neither file nor directory'.format(qry))
+   224	
+   225	    files.sort()  # inplace
+   226	
+   227	    forward = []
+   228	    reverse = []
+   229	    unpaired = []
+   230	
+   231	    if reads_are_paired:
+   232	        extensions = unique_extensions(files)
+   233	        re_tmpl = '.+[_-][Rr]?{}\.(?:' + '|'.join(extensions) + ')$'
+   234	        forward_re = re.compile(re_tmpl.format('1'))
+   235	        reverse_re = re.compile(re_tmpl.format('2'))
+   236	
+   237	        for fname in files:
+   238	            if forward_re.search(fname):
+   239	                forward.append(fname)
+   240	            elif reverse_re.search(fname):
+   241	                reverse.append(fname)
+   242	            else:
+   243	                unpaired.append(fname)
+   244	
+   245	        num_forward = len(forward)
+   246	        num_reverse = len(reverse)
+   247	
+   248	        if num_forward and num_reverse and num_forward != num_reverse:
+   249	            msg = 'Number of forward ({}) and reverse ({}) reads do not match'
+   250	            die(msg.format(num_forward, num_reverse))
+   251	
+   252	    else:
+   253	        unpaired = files
+   254	
+   255	    return {'forward': forward, 'reverse': reverse, 'unpaired': unpaired}
+   256	
+   257	
+   258	# --------------------------------------------------
+   259	def line_count(fname):
+   260	    """Count the number of lines in a file"""
+   261	
+   262	    n = 0
+   263	    for _ in open(fname):
+   264	        n += 1
+   265	
+   266	    return n
+   267	
+   268	
+   269	# --------------------------------------------------
+   270	def run_job_file(jobfile, msg='Running job', procs=1):
+   271	    """Run a job file if there are jobs"""
+   272	
+   273	    num_jobs = line_count(jobfile)
+   274	    warn('{} (# jobs = {})'.format(msg, num_jobs))
+   275	
+   276	    if num_jobs > 0:
+   277	        cmd = 'parallel --halt soon,fail=1 -P {} < {}'.format(procs, jobfile)
+   278	
+   279	        try:
+   280	            subprocess.run(cmd, shell=True, check=True)
+   281	        except subprocess.CalledProcessError as err:
+   282	            die('Error:\n{}\n{}\n'.format(err.stderr, err.stdout))
+   283	        finally:
+   284	            os.remove(jobfile)
+   285	
+   286	    return True
+   287	
+   288	
+   289	# --------------------------------------------------
+   290	def run_centrifuge(**args):
+   291	    """Run Centrifuge"""
+   292	
+   293	    file_format = args['file_format']
+   294	    files = args['files']
+   295	    exclude_ids = get_excluded_tax(args['exclude_tax_ids'])
+   296	    index_name = args['index_name']
+   297	    index_dir = args['index_dir']
+   298	    out_dir = args['out_dir']
+   299	    threads = args['threads']
+   300	    procs = args['procs']
+   301	
+   302	    reports_dir = os.path.join(out_dir, 'reports')
+   303	
+   304	    if not os.path.isdir(reports_dir):
+   305	        os.makedirs(reports_dir)
+   306	
+   307	    jobfile = tmp.NamedTemporaryFile(delete=False, mode='wt')
+   308	    exclude_arg = '--exclude-taxids ' + exclude_ids if exclude_ids else ''
+   309	    format_arg = '-f' if file_format == 'fasta' else ''
+   310	
+   311	    cmd_tmpl = 'CENTRIFUGE_INDEXES={} centrifuge {} {} -p {} -x {} '
+   312	    cmd_base = cmd_tmpl.format(index_dir, exclude_arg, format_arg, threads,
+   313	                               index_name)
+   314	
+   315	    for file in files['unpaired']:
+   316	        basename = os.path.basename(file)
+   317	        tsv_file = os.path.join(reports_dir, basename + '.tsv')
+   318	        sum_file = os.path.join(reports_dir, basename + '.sum')
+   319	        tmpl = cmd_base + '-U "{}" -S "{}" --report-file "{}"\n'
+   320	        if not os.path.isfile(tsv_file):
+   321	            jobfile.write(tmpl.format(file, sum_file, tsv_file))
+   322	
+   323	    for i, file in enumerate(files['forward']):
+   324	        basename = os.path.basename(file)
+   325	        tsv_file = os.path.join(reports_dir, basename + '.tsv')
+   326	        sum_file = os.path.join(reports_dir, basename + '.sum')
+   327	        tmpl = cmd_base + '-1 "{}" -2 "{}" -S "{}" --report-file "{}"\n'
+   328	        if not os.path.isfile(tsv_file):
+   329	            jobfile.write(
+   330	                tmpl.format(file, files['reverse'][i], sum_file, tsv_file))
+   331	
+   332	    jobfile.close()
+   333	
+   334	    run_job_file(jobfile=jobfile.name, msg='Running Centrifuge', procs=procs)
+   335	
+   336	    return reports_dir
+   337	
+   338	
+   339	# --------------------------------------------------
+   340	def get_excluded_tax(ids):
+   341	    """Verify the ids look like numbers"""
+   342	
+   343	    tax_ids = []
+   344	
+   345	    if ids:
+   346	        for s in [x.strip() for x in ids.split(',')]:
+   347	            if s.isnumeric():
+   348	                tax_ids.append(s)
+   349	            else:
+   350	                warn('tax_id "{}" is not numeric'.format(s))
+   351	
+   352	    return ','.join(tax_ids)
+   353	
+   354	
+   355	# --------------------------------------------------
+   356	def make_bubble(reports_dir, out_dir, title):
+   357	    """Make bubble chart"""
+   358	
+   359	    fig_dir = os.path.join(out_dir, 'figures')
+   360	
+   361	    if not os.path.isdir(fig_dir):
+   362	        os.makedirs(fig_dir)
+   363	
+   364	    cur_dir = os.path.dirname(os.path.realpath(__file__))
+   365	    bubble = os.path.join(cur_dir, 'centrifuge_bubble.r')
+   366	    tmpl = '{} --dir "{}" --title "{}" --outdir "{}"'
+   367	    job = tmpl.format(bubble, reports_dir, title, fig_dir)
+   368	    warn(job)
+   369	
+   370	    subprocess.run(job, shell=True)
+   371	
+   372	    return fig_dir
+   373	
+   374	
+   375	# --------------------------------------------------
+   376	if __name__ == '__main__':
+   377	    main()
 ````
 
 \newpage

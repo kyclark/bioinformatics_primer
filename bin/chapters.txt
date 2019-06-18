@@ -3,7 +3,7 @@ bash-scripting
 #bash-hello
 #bash-head
 #bash-cat-n
-parellel
+parallel
 bash-fq2fa
 bash-bam2fa
 makefile-yeast

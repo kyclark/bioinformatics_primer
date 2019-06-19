@@ -1,6 +1,7 @@
 ##gff-version  3
 # Sequence Data: seqnum=1;seqlen=4867;seqhdr="HumanGut_CONTIG_00235296 /accession=HumanGut_CONTIG_00235296 /length=4867 /length=4867 /sample_id=1340106823570556171 /sample_acc=HUMANGUT_SMPL_INB /sample_name=HUMANGUT_SMPL_INB /site_id_n=HUMANGUT_SITE_INB"
 # Model Data: version=Prodigal.v2.6.3;run_type=Single;model="Ab initio";gc_cont=54.91;transl_table=11;uses_sd=0
+
 HumanGut_CONTIG_00235296	Prodigal_v2.6.3	CDS	17	157	3.3	+	0	ID=1_1;partial=00;start_type=GTG;rbs_motif=None;rbs_spacer=None;gc_cont=0.688;conf=68.33;score=3.35;cscore=11.92;sscore=-8.57;rscore=-4.31;uscore=-1.25;tscore=-3.01;
 HumanGut_CONTIG_00235296	Prodigal_v2.6.3	CDS	154	915	134.8	+	0	ID=1_2;partial=00;start_type=GTG;rbs_motif=AGGA;rbs_spacer=6bp;gc_cont=0.655;conf=100.00;score=134.77;cscore=124.82;sscore=9.95;rscore=10.05;uscore=0.27;tscore=-1.66;
 HumanGut_CONTIG_00235296	Prodigal_v2.6.3	CDS	1505	2029	41.2	-	0	ID=1_3;partial=00;start_type=TTG;rbs_motif=AGGA;rbs_spacer=8bp;gc_cont=0.547;conf=99.99;score=41.18;cscore=36.65;sscore=4.53;rscore=10.05;uscore=0.09;tscore=-6.86;

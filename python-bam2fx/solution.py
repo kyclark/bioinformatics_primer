@@ -51,16 +51,17 @@ def main():
         os.makedirs(out_dir)
 
     commands = []
-    for i, file in enumerate(args.file):
+    for i, file in enumerate(args.file, start=1):
         if not os.path.isfile(file):
             warn('"{}" is not a file'.format(file))
             continue
 
-        basename, _ = os.path.splitext(os.path.basename(file))
-        out_path = os.path.join(out_dir, basename + out_ext)
+        basename = os.path.basename(file)
+        root, _ = os.path.splitext(basename)
+        out_path = os.path.join(out_dir, root + out_ext)
+        print('{:3}: {}'.format(i, basename))
         commands.append('samtools {} "{}" > {}'.format(
             out_fmt, file, out_path))
-
     try:
         run(commands, halt=1, num_procs=8, verbose=True)
     except Exception as e:

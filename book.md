@@ -2091,76 +2091,6 @@ Finally we remove (`rm`) our temporary files and say good-bye to the user. I alw
 This program shows you how to find input files, create an output directory, use temporary files, process input files with some program, and run those processes either serially or in parallel. This program weighs in at just over 60 lines, which is about the maximum number I feel comfortable writing in `bash`. It's a capable program, but if I wanted it to do much more, I'd be more comfortable writing it in Python.
 \newpage
 
-## Solution
-
-````
-     1	#!/usr/bin/env bash
-     2	# Convert BAM files to FASTA
-     3	
-     4	set -u
-     5	
-     6	# Check number of arguments
-     7	if [[ $# -lt 1 ]] || [[ $# -gt 3 ]]; then
-     8	    echo "Usage: $(basename "$0") IN_DIR OUT_DIR [CORES]" 
-     9	    exit 1
-    10	fi
-    11	
-    12	# Assign arguments into named variable
-    13	IN_DIR=$1
-    14	OUT_DIR=$2
-    15	CORES=${3:-40} # default
-    16	
-    17	# Check input directory
-    18	if [[ ! -d "$IN_DIR" ]]; then
-    19	    echo "Bad IN_DIR \"$IN_DIR\""
-    20	    exit 1
-    21	fi
-    22	
-    23	# Make output directory if necessary
-    24	[[ ! -d "$OUT_DIR" ]] && mkdir -p "$OUT_DIR"
-    25	
-    26	# Find, check input files
-    27	FILES=$(mktemp)
-    28	find "$IN_DIR" -name \*.bam -size +0c > "$FILES"
-    29	NUM=$(wc -l "$FILES" | awk '{print $1}')
-    30	if [[ $NUM -lt 1 ]]; then
-    31	    echo "No BAM files in IN_DIR \"$IN_DIR\""
-    32	    exit 1
-    33	fi
-    34	
-    35	# Iterate BAM file in input directory, create samtools command
-    36	JOBS=$(mktemp)
-    37	i=0
-    38	while read -r BAM; do
-    39	    i=$((i+1))
-    40	    BASE=$(basename "$BAM" ".bam")
-    41	    printf "%3d: %s\\n" $i "$BASE"
-    42	
-    43	    # Only process if FASTA does not exist
-    44	    FASTA="$OUT_DIR/$BASE.fa"
-    45	    if [[ ! -f "$FASTA" ]]; then
-    46	        echo "samtools fasta \"$BAM\" > \"$FASTA\"" >> "$JOBS"
-    47	    fi
-    48	done < "$FILES"
-    49	
-    50	# Look for parallel
-    51	PARALLEL=$(which parallel)
-    52	if [[ -z "$PARALLEL" ]]; then
-    53	    echo "Running serially, install GNU parallel for speed!"
-    54	    sh "$JOBS"
-    55	else
-    56	    echo "Running with $CORES cores in parallel"
-    57	    parallel -j "$CORES" --halt soon,fail=1 < "$JOBS"
-    58	fi
-    59	
-    60	# Remove temp files, exit
-    61	rm "$FILES"
-    62	rm "$JOBS"
-    63	echo "Done."
-````
-
-\newpage
-
 # Chapter 5: Bash: FASTQ-to-FASTA Converter (fq2fa)
 
 Given a list of FASTQ files or directories containing FASTQ files, convert them to FASTA using `parallel`.
@@ -10851,13 +10781,100 @@ Done.
 The `parallel` version looks out of order because the jobs are run as quickly as possible in whatever order that happens.
 \newpage
 
-# Chapter 62: BLAST Pipeline
+# Chapter 62: BAM to FASTx in Python
+
+Same as `bam2fa.sh` but in Python.
+
+\newpage
+
+## Solution
+
+````
+     1	#!/usr/bin/env python3
+     2	"""BAM to FASTx"""
+     3	
+     4	import argparse
+     5	import os
+     6	from parallelprocs import run
+     7	from dire import warn
+     8	
+     9	
+    10	# --------------------------------------------------
+    11	def get_args():
+    12	    """Get command-line arguments"""
+    13	
+    14	    parser = argparse.ArgumentParser(
+    15	        description='BAM to FASTx',
+    16	        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    17	
+    18	    parser.add_argument('file',
+    19	                        metavar='FILE',
+    20	                        nargs='+',
+    21	                        help='Input BAM files')
+    22	
+    23	    parser.add_argument('-f',
+    24	                        '--format',
+    25	                        help='Output format',
+    26	                        metavar='str',
+    27	                        type=str,
+    28	                        choices=['fasta', 'fastq'],
+    29	                        default='fasta')
+    30	
+    31	    parser.add_argument('-o',
+    32	                        '--outdir',
+    33	                        help='Output directory',
+    34	                        metavar='str',
+    35	                        type=str,
+    36	                        default='')
+    37	
+    38	    return parser.parse_args()
+    39	
+    40	
+    41	# --------------------------------------------------
+    42	def main():
+    43	    """Make a jazz noise here"""
+    44	
+    45	    args = get_args()
+    46	    out_fmt = args.format
+    47	    out_dir = args.outdir or out_fmt
+    48	    out_ext = '.fa' if out_fmt == 'fasta' else '.fq'
+    49	
+    50	    if not os.path.isdir(out_dir):
+    51	        os.makedirs(out_dir)
+    52	
+    53	    commands = []
+    54	    for i, file in enumerate(args.file):
+    55	        if not os.path.isfile(file):
+    56	            warn('"{}" is not a file'.format(file))
+    57	            continue
+    58	
+    59	        basename, _ = os.path.splitext(os.path.basename(file))
+    60	        out_path = os.path.join(out_dir, basename + out_ext)
+    61	        commands.append('samtools {} "{}" > {}'.format(
+    62	            out_fmt, file, out_path))
+    63	
+    64	    try:
+    65	        run(commands, halt=1, num_procs=8, verbose=True)
+    66	    except Exception as e:
+    67	        print(e)
+    68	
+    69	    print('Done, see output in "{}"'.format(out_dir))
+    70	
+    71	
+    72	# --------------------------------------------------
+    73	if __name__ == '__main__':
+    74	    main()
+````
+
+\newpage
+
+# Chapter 63: BLAST Pipeline
 
 Everyone needs a thneed.
 
 \newpage
 
-# Chapter 63: CD-HIT Pipeline
+# Chapter 64: CD-HIT Pipeline
 
 Let's take the `cd-hit` cluster exercise and extend it to where we take the proteins FASTA, run cd-hit, and find the unclustered proteins all in one go. First things first, we need to ensure `cd-hit` is on our system. It's highly unlikely that it is, so let's figure out how to install it.
 
@@ -11088,7 +11105,7 @@ Now we can try out our new code:
 
 \newpage
 
-# Chapter 64: Centrifuge Pipeline in Python
+# Chapter 65: Centrifuge Pipeline in Python
 
 \newpage
 

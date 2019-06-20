@@ -63,6 +63,7 @@ common-words
 common-kmers
 bubble-plot
 python-pipelines
+python-bam2fx
 blast-pipeline
 cd-hit-pipeline
 centrifuge-pipeline

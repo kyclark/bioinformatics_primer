@@ -4,7 +4,7 @@
 set -u
 
 # Check number of arguments
-if [[ $# -lt 1 ]] || [[ $# -gt 3 ]]; then
+if [[ $# -lt 2 ]] || [[ $# -gt 3 ]]; then
     echo "Usage: $(basename "$0") IN_DIR OUT_DIR [CORES]" 
     exit 1
 fi

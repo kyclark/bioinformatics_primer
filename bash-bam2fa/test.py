@@ -9,8 +9,8 @@ from subprocess import getstatusoutput, getoutput
 from shutil import rmtree
 from Bio import SeqIO
 
-prg = './bam2fx.py'
-inputs = '../inputs/*.bam'
+prg = './bam2fa.sh'
+in_dir = '../inputs'
 
 
 # --------------------------------------------------
@@ -30,26 +30,36 @@ def test_noargs():
 
 
 # --------------------------------------------------
-def test_usage():
+def test_too_few_args():
     """usage"""
 
-    for flag in ['-h', '--help']:
-        rv, out = getstatusoutput('{} {}'.format(prg, flag))
-        assert rv == 0
-        assert out.lower().startswith('usage:')
+    rv, out = getstatusoutput('{} foo'.format(prg))
+    assert rv > 0
+    assert out.lower().startswith('usage:')
 
 
 # --------------------------------------------------
-def test_bad_file():
+def test_too_many_args():
     """usage"""
 
     bad = random_filename()
-    _, out = getstatusoutput('{} {}'.format(prg, bad))
-    assert re.search('"{}" is not a file'.format(bad), out)
+    rv, out = getstatusoutput('{} foo bar baz quuz'.format(prg, bad))
+    assert rv > 0
+    assert out.lower().startswith('usage:')
 
 
 # --------------------------------------------------
-def run(fmt):
+def test_bad_dir():
+    """usage"""
+
+    bad = random_filename()
+    rv, out = getstatusoutput('{} {} out'.format(prg, bad))
+    assert rv > 0
+    assert out.rstrip() == 'Bad IN_DIR "{}"'.format(bad)
+
+
+# --------------------------------------------------
+def test_runs():
     """runs"""
 
     out_dir = random_filename()
@@ -59,11 +69,9 @@ def run(fmt):
         rmtree(out_dir)
 
     try:
-        rv, out = getstatusoutput('{} {} -f {} -o {}'.format(
-            prg, inputs, fmt, out_dir))
+        rv, out = getstatusoutput('{} {} {}'.format(prg, in_dir, out_dir))
         assert rv == 0
-        expected = 'Done, see output in "{}"'.format(out_dir)
-        assert out.splitlines()[-1].rstrip() == expected
+        assert out.splitlines()[-1].rstrip() == 'Done.'
 
         assert os.path.isdir(out_dir)
 
@@ -71,22 +79,12 @@ def run(fmt):
         assert len(files) == 1
 
         fasta = os.path.join(out_dir, files[0])
-        seqs = list(SeqIO.parse(fasta, fmt))
+        seqs = list(SeqIO.parse(fasta, 'fasta'))
         assert len(seqs) == 290
 
     finally:
         if os.path.isdir(out_dir):
             rmtree(out_dir)
-
-
-# --------------------------------------------------
-def test_fasta():
-    run('fasta')
-
-
-# --------------------------------------------------
-def test_fastq():
-    run('fastq')
 
 
 # --------------------------------------------------

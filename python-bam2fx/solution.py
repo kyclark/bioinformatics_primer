@@ -35,6 +35,13 @@ def get_args():
                         type=str,
                         default='')
 
+    parser.add_argument('-p',
+                        '--procs',
+                        help='Num procs',
+                        metavar='int',
+                        type=int,
+                        default=0)
+
     parser.add_argument('-v', '--verbose', help='Verbose', action='store_true')
 
     return parser.parse_args()
@@ -65,7 +72,7 @@ def main():
         commands.append('samtools {} "{}" > {}'.format(
             out_fmt, file, out_path))
     try:
-        run(commands, halt=1, num_procs=8, verbose=args.verbose)
+        run(commands, halt=1, num_procs=args.procs, verbose=args.verbose)
     except Exception as e:
         print(e)
 

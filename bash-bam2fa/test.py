@@ -71,7 +71,8 @@ def test_runs():
     try:
         rv, out = getstatusoutput('{} {} {}'.format(prg, in_dir, out_dir))
         assert rv == 0
-        assert out.splitlines()[-1].rstrip() == 'Done.'
+        expected = 'Done, see output in "{}"'.format(out_dir)
+        assert out.splitlines()[-1].rstrip() == expected
 
         assert os.path.isdir(out_dir)
 

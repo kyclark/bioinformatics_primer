@@ -1,6 +1,6 @@
 # Bash: Convert BAM to FASTA (bam2fa)
 
-Building on the `parallel` chapter, here is an example of converting BAM files to FASTA. SAM and BAM are formats for storing sequence alignments and stand for "Sequence Alignment Map" which is plain text and "Binary Alignment Map" which is the same information but stored in a compressed format only readable by machines. 
+Building on the `parallel` chapter, here is an example of a `bash` program that will convert BAM files to FASTA. SAM and BAM are formats for storing sequence alignments and stand for "Sequence Alignment Map" which is plain text and "Binary Alignment Map" which is the same information but stored in a compressed format only readable by machines. 
 
 https://en.wikipedia.org/wiki/SAM_(file_format)
 
@@ -18,11 +18,11 @@ Likewise with testing `$IN_DIR`, we test if `$OUT_DIR` exists and create it with
 
 ## Finding input files
 
-Next I want to `find` inside `$IN_DIR` any files with a `-name` ending with `.bam` that are greater in `-size` than 0 characters/. I put these into a temporary file so I can count them and later iterate over them. I do not like using the `bash` syntax for lists, so I always put lists of things into files. I find the number of lines in the file using `wc -l` and see if `$NUM` is less than (`-lt`) one. If so, I alert the user and `exit 1` to indicate an error.
+Next I want to `find` inside `$IN_DIR` any files with a `-name` ending with `.bam` that are greater in `-size` than 0 characters/bytes. I put these into a temporary file so I can count them and later iterate over them. I do not like using the `bash` syntax for lists, so I always put lists of things into files. I find the number of lines in the file using `wc -l` and see if `$NUM` is less than one (`-lt 1`). If so, I alert the user and `exit 1` to indicate an error.
 
 ## Temporary files
 
-I prefer to use `mktemp` to get a temporary file. You could just overwrite a statically named `files.txt` file if you want, but you run the risk of accidentally overwriting a jobs file that is still being used by another process. It's much safer to use `mktemp` as it guarantees a uniquely named file in a temporary directory. Additionally, if you forget to `rm` the file when you are done, it will likely be created in a location where old, unused files are regularly removed by the system.
+I prefer to use `mktemp` to get a temporary file. You could just overwrite a statically named `files.txt` file if you want, but you run the risk of accidentally overwriting a file that is still being used by another process. It's much safer to use `mktemp` as it guarantees a uniquely named file in a temporary directory. Additionally, if you forget to `rm` the file when you are done, it will likely be created in a location where old, unused files are regularly removed by the system.
 
 ## Create jobs file
 
@@ -50,10 +50,14 @@ I look for the `parallel` command using `which` to inspect my `$PATH` for any pr
 PATH=/directory/with/parallel:$PATH
 ````
 
-Be sure it's the *directory* where `parallel` lives, not the `parallel` program itself.
+Be sure it's the *directory* where `parallel` lives, not the path to the `parallel` program itself.
 
 The `-z` test checks if a string is null which will be the case if `parallel` is not found. In that case, we execute all the commands with `sh`; otherwise, we run `parallel` with some number of cores, noting that any failures should `halt` the process.
 
 ## Cleaning up
 
 Finally we remove (`rm`) our temporary files and say good-bye to the user. I always `echo "Done."` at the end of my `bash` programs just so I can see that I made it to the end of the program.
+
+## Summary
+
+This program shows you how to find input files, create an output directory, use temporary files, process input files with some program, and run those processes either serially or in parallel. This program weighs in at just over 60 lines, which is about the maximum number I feel comfortable writing in `bash`. It's a capable program, but if I wanted it to do much more, I'd be more comfortable writing it in Python.

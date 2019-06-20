@@ -4,8 +4,8 @@ bash-scripting
 #bash-head
 #bash-cat-n
 parallel
-bash-fq2fa
 bash-bam2fa
+bash-fq2fa
 makefile-yeast
 git-basics
 python-intro
@@ -31,6 +31,7 @@ dict-codons
 dict-protein-translation
 parsing
 parsing-blast-outfmt-6
+parsing-prodigal-gff
 centrifuge-counts-by-tax
 pairwise-sample-dist
 tabchk
@@ -43,7 +44,6 @@ fasta-gc
 fasta-read-separator
 fastq2fasta
 cat-fastx
-parsing-prodigal-gff
 parsing-ncbi-taxonomy-xml
 parsing-pubmed-json
 parsing-swissprot

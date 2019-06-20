@@ -1,4 +1,4 @@
-# Parsing Prodigal GFF to Probable Predicted Genes 
+# Parsing Putative Genes in Prodigal GFF
 
 Two of the most common output files in bioinformatics, GFF (General Feature Format) and BLAST's tab/CSV files *do not include headers*, so it's up to you to merge in the headers.  Additionally, some of the lines may be comments (they start with `#` just like bash and Python) or may be blank, so you should skip those.  Further, the last field in GFF is basically a dumping ground for whatever metadata the author felt like putting there.  Usually it's a bunch of "key=value" pairs, but there's no guarantee.  
 
@@ -61,10 +61,7 @@ The third line is also long and provides metadata about the model Prodigal used 
 
 ````
 # Model Data: version=Prodigal.v2.6.3;
-run_type=Single;
-model="Ab initio";
-gc_cont=54.91;
-transl_table=11;uses_sd=0
+run_type=Single;model="Ab initio";gc_cont=54.91;transl_table=11;uses_sd=0
 ````
 
 Finally on line 4 the actual data starts. We can inspect it with a bit of command-line fu:
@@ -99,7 +96,9 @@ end        : 157
 score      : 3.3
 strand     : +
 frame      : 0
-attributes : ID=1_1;partial=00;start_type=GTG;rbs_motif=None;rbs_spacer=None;gc_cont=0.688;conf=68.33;score=3.35;cscore=11.92;sscore=-8.57;rscore=-4.31;uscore=-1.25;tscore=-3.01;
+attributes : ID=1_1;partial=00;start_type=GTG;rbs_motif=None;rbs_spacer=None;\
+             gc_cont=0.688;conf=68.33;score=3.35;cscore=11.92;sscore=-8.57;\
+			 rscore=-4.31;uscore=-1.25;tscore=-3.01;
 ````
 
 Now we'd like to find all the CDS records that had a `score` greater than some threshold. For that, we're going to need to check the `type` field and then find the `score` hidden in the `attributes` field. 
@@ -107,7 +106,8 @@ Now we'd like to find all the CDS records that had a `score` greater than some t
 Just to be sure, what are the values for the `type` field?
 
 ````
-$ awk -F"\t" 'NR>4 {print ($3==""?"NA":$3)}' HUMANGUT_SMPL_INB.fa.prodigal.gff | sort | uniq -c
+$ awk -F"\t" 'NR>4 {print ($3==""?"NA":$3)}' \
+> HUMANGUT_SMPL_INB.fa.prodigal.gff | sort | uniq -c
  356 CDS
  148 NA
 ````
@@ -167,13 +167,16 @@ The `rec['attributes']` are separated by the semi-colon `;`, so we can use that 
 ['ID=1_1', 'partial=00', 'start_type=GTG', 'rbs_motif=None', 'score=3.35']
 ````
 
-As it happens, they all have the structure "key=value", so it's fairly safe to just `split` each of those on the equal sign `=`, but it's safer to use a regular expression to validate that we have something that *really* looks like a key and value:
+As it happens, they all have the structure "key=value", so we could `split` each of those on the equal sign `=`, but it's far safer to use a regular expression to validate that we have something that *really* looks like a key and value. This will make the script far more flexible and reusable!
 
 ````
 >>> import re
 >>> kv = re.compile('([^=]+)=([^=]+)')
->>> kv.match('partial=00')
+>>> match = kv.match('partial=00')
+>>> match
 <re.Match object; span=(0, 10), match='partial=00'>
+>>> match.groups()
+('partial', '00')
 ````
 
 When the `match` fails, it returns `None`, so it's important that we check that each attribute actually matched the regex. I chose to `map` each of the attributes into the regex. Note that here I introduce a fake attribute that won't match so you can see the `None`:

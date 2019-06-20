@@ -2026,7 +2026,142 @@ I tend to use `parallel` in somewhere most of my pipelines, even if they will ru
 To paraphrase Dr. Ian Malcolm, just because you *can* parallelize jobs doesn't mean you always *should* do so. As stated before, jobs that use loads of memory like BLAST probably should not be unless more than one copy of the database can fit into memory. Jobs that are mostly I/O (input/output) are good candidates for use with `parallel`. 
 \newpage
 
-# Chapter 4: Bash: FASTQ-to-FASTA Converter (fq2fa)
+# Chapter 4: Bash: Convert BAM to FASTA (bam2fa)
+
+Building on the `parallel` chapter, here is an example of a `bash` program that will convert BAM files to FASTA. SAM and BAM are formats for storing sequence alignments and stand for "Sequence Alignment Map" which is plain text and "Binary Alignment Map" which is the same information but stored in a compressed format only readable by machines. 
+
+https://en.wikipedia.org/wiki/SAM_(file_format)
+
+It's common to get SAM/BAM formats from a sequencing core as your sequences are often aligned to some reference like human. You can use `samtools` to look at the files and convert them to other formats easily enough. This program is designed to quickly convert a directory of BAM files into FASTA files that will live in some new directory.
+
+## Checking and unpacking arguments
+
+After using `set -u` to catch basic mistakes, we check `$#` to see how many arguments we have (mnemonic: `#` is the symbol for "number"). We need at least one argument but no more than 3. Print a usage if needed. Then we put `$1`, `$2`, etc. into judiciously named variables that describe what they are. Too often I see programs where `$1` is used throughout; while valid, this makes the code unreadable whereas `$IN_DIR` reminds me what the variable is supposed to be.
+
+## Testing directories
+
+The test `-d $IN_DIR` will be "True" if the string in `$IN_DIR` names a directory that exists. (Use `man test` to see other tests you can use.) We use `!` to negate it, meaning there is no directory with that name. If this is the case, we report the error and `exit 1`. It's very important to `exit` with a *non-zero exit code* when there is an error. If you are using `make` or `parallel` or other programs to chain this, you can ensure the chain will fail if a component fails. *This is wise and good.* You do not want to complete an analysis pipeline if some key step fails. You want to report errors and halt processing until the error is fixed!
+
+Likewise with testing `$IN_DIR`, we test if `$OUT_DIR` exists and create it with `mkdir -p` if it does not. The `-p` option tells `mkdir` to create "parent" directories as needed. If the user wanted the output files to go into `$HOME/projects/foo/bar/fasta`, `mkdir` would fail if all the directories up to `fasta` didn't exist. With `-p` it will create any needed parent directories.
+
+## Finding input files
+
+Next I want to `find` inside `$IN_DIR` any files with a `-name` ending with `.bam` that are greater in `-size` than 0 characters/bytes. I put these into a temporary file so I can count them and later iterate over them. I do not like using the `bash` syntax for lists, so I always put lists of things into files. I find the number of lines in the file using `wc -l` and see if `$NUM` is less than one (`-lt 1`). If so, I alert the user and `exit 1` to indicate an error.
+
+## Temporary files
+
+I prefer to use `mktemp` to get a temporary file. You could just overwrite a statically named `files.txt` file if you want, but you run the risk of accidentally overwriting a file that is still being used by another process. It's much safer to use `mktemp` as it guarantees a uniquely named file in a temporary directory. Additionally, if you forget to `rm` the file when you are done, it will likely be created in a location where old, unused files are regularly removed by the system.
+
+## Create jobs file
+
+I make a second temp file for the commands that need to be run, one for each file. I use `while read` to read each line from the `$FILES` into a variable called `BAM` that is the name of the BAM file. I like to print out "1: foo.bam", "2: bar.bam", etc., while processing so I can see what is happening and how many files are being processed, so I increment a counter `$i` by one and use `printf` to print out the counter as three-characters-wide digit (`%3d`), followed by a colon (`:`), followed by a string (`%s`) where I'll show the `basename` of the file where:
+
+````
+$ basename foo/bar/baz.bam
+baz.bam
+````
+
+I want to use the basename of the file as the new filename but with the `.bam` extension removed which I can note as the optional second argument to `basename`:
+
+````
+$ basename foo/bar/baz.bam ".bam"
+baz
+````
+
+I create the name of the new `FASTA` file by creating a new string `$OUT_DIR/$BASE.fa`. I use the test `! -f` to check if the file *does not exist*; if so, I `echo` the `samtools` command to convert it to `fasta` format, redirecting with the single `>` to put the output from `samtools` into the new `$FASTA` file. This whole command gets *appended* with the double `>>` into the `$JOBS` file. (I've have used a single `>` in that instance more times than I care to admit, which means that I will only run the last job because the single `>` *overwrites* any existing content!)
+
+## Running the jobs file
+
+I look for the `parallel` command using `which` to inspect my `$PATH` for any program with this name. If you have installed `parallel` on your system but this fails, it's probably because `parallel` exists in some location that is not in your `$PATH`. You can fix this by putting `parallel` into one of the directories in your `$PATH` or by appending the directory location into your existing `$PATH`. You could modify this script like so:
+
+````
+PATH=/directory/with/parallel:$PATH
+````
+
+Be sure it's the *directory* where `parallel` lives, not the path to the `parallel` program itself.
+
+The `-z` test checks if a string is null which will be the case if `parallel` is not found. In that case, we execute all the commands with `sh`; otherwise, we run `parallel` with some number of cores, noting that any failures should `halt` the process.
+
+## Cleaning up
+
+Finally we remove (`rm`) our temporary files and say good-bye to the user. I always `echo "Done."` at the end of my `bash` programs just so I can see that I made it to the end of the program.
+
+## Summary
+
+This program shows you how to find input files, create an output directory, use temporary files, process input files with some program, and run those processes either serially or in parallel. This program weighs in at just over 60 lines, which is about the maximum number I feel comfortable writing in `bash`. It's a capable program, but if I wanted it to do much more, I'd be more comfortable writing it in Python.
+\newpage
+
+## Solution
+
+````
+     1	#!/usr/bin/env bash
+     2	# Convert BAM files to FASTA
+     3	
+     4	set -u
+     5	
+     6	# Check number of arguments
+     7	if [[ $# -lt 1 ]] || [[ $# -gt 3 ]]; then
+     8	    echo "Usage: $(basename "$0") IN_DIR OUT_DIR [CORES]" 
+     9	    exit 1
+    10	fi
+    11	
+    12	# Assign arguments into named variable
+    13	IN_DIR=$1
+    14	OUT_DIR=$2
+    15	CORES=${3:-40} # default
+    16	
+    17	# Check input directory
+    18	if [[ ! -d "$IN_DIR" ]]; then
+    19	    echo "Bad IN_DIR \"$IN_DIR\""
+    20	    exit 1
+    21	fi
+    22	
+    23	# Make output directory if necessary
+    24	[[ ! -d "$OUT_DIR" ]] && mkdir -p "$OUT_DIR"
+    25	
+    26	# Find, check input files
+    27	FILES=$(mktemp)
+    28	find "$IN_DIR" -name \*.bam -size +0c > "$FILES"
+    29	NUM=$(wc -l "$FILES" | awk '{print $1}')
+    30	if [[ $NUM -lt 1 ]]; then
+    31	    echo "No BAM files in IN_DIR \"$IN_DIR\""
+    32	    exit 1
+    33	fi
+    34	
+    35	# Iterate BAM file in input directory, create samtools command
+    36	JOBS=$(mktemp)
+    37	i=0
+    38	while read -r BAM; do
+    39	    i=$((i+1))
+    40	    BASE=$(basename "$BAM" ".bam")
+    41	    printf "%3d: %s\\n" $i "$BASE"
+    42	
+    43	    # Only process if FASTA does not exist
+    44	    FASTA="$OUT_DIR/$BASE.fa"
+    45	    if [[ ! -f "$FASTA" ]]; then
+    46	        echo "samtools fasta \"$BAM\" > \"$FASTA\"" >> "$JOBS"
+    47	    fi
+    48	done < "$FILES"
+    49	
+    50	# Look for parallel
+    51	PARALLEL=$(which parallel)
+    52	if [[ -z "$PARALLEL" ]]; then
+    53	    echo "Running serially, install GNU parallel for speed!"
+    54	    sh "$JOBS"
+    55	else
+    56	    echo "Running with $CORES cores in parallel"
+    57	    parallel -j "$CORES" --halt soon,fail=1 < "$JOBS"
+    58	fi
+    59	
+    60	# Remove temp files, exit
+    61	rm "$FILES"
+    62	rm "$JOBS"
+    63	echo "Done."
+````
+
+\newpage
+
+# Chapter 5: Bash: FASTQ-to-FASTA Converter (fq2fa)
 
 Given a list of FASTQ files or directories containing FASTQ files, convert them to FASTA using `parallel`.
 
@@ -2127,68 +2262,6 @@ Given a list of FASTQ files or directories containing FASTQ files, convert them 
     90	rm "$JOBS"
     91	
     92	echo "Done."
-````
-
-\newpage
-
-# Chapter 5: Bash: BAM to FASTA (bam2fa)
-
-Convert BAM files to FASTA
-
-\newpage
-
-## Solution
-
-````
-     1	#!/usr/bin/env bash
-     2	
-     3	# Convert BAM files to FASTA
-     4	# Author: Ken Youens-Clark <kyclark@gmail.com>
-     5	
-     6	set -u
-     7	
-     8	if [[ $# -lt 1 ]] || [[ $# -gt 3 ]]; then
-     9	    echo "Usage: $(basename "$0") IN_DIR OUT_DIR [CORES]" 
-    10	    exit 1
-    11	fi
-    12	
-    13	IN_DIR=$1
-    14	OUT_DIR=$2
-    15	CORES=${3:-40}
-    16	
-    17	if [[ ! -d "$IN_DIR" ]]; then
-    18	    echo "Bad IN_DIR \"$IN_DIR\""
-    19	    exit 1
-    20	fi
-    21	
-    22	[[ ! -d "$OUT_DIR" ]] && mkdir -p "$OUT_DIR"
-    23	
-    24	JOBS=$(mktemp)
-    25	i=0
-    26	for BAM in $IN_DIR/*.bam; do
-    27	    i=$((i+1))
-    28	    BASE=$(basename "$BAM" ".bam")
-    29	    printf "%3d: %s\\n" $i "$BASE"
-    30	
-    31	    # Only process if FASTA does not exist
-    32	    FASTA="$OUT_DIR/$BASE.fa"
-    33	    if [[ ! -f "$FASTA" ]]; then
-    34	        echo "samtools fasta \"$BAM\" > \"$FASTA\"" >> "$JOBS"
-    35	    fi
-    36	done
-    37	
-    38	PARALLEL=$(which parallel)
-    39	
-    40	if [[ -z "$PARALLEL" ]]; then
-    41	    echo "Running serially, install GNU parallel for speed!"
-    42	    sh "$JOBS"
-    43	else
-    44	    echo "Running with $CORES cores in parallel"
-    45	    parallel -j "$CORES" --halt soon,fail=1 < "$JOBS"
-    46	fi
-    47	
-    48	rm "$JOBS"
-    49	echo "Done."
 ````
 
 \newpage
@@ -5475,7 +5548,7 @@ PubMed, NCBI Taxonomy, APIs
 
 \newpage
 
-# Chapter 29: Parsing BLAST -outfmt 6
+# Chapter 29: Parsing Tab-delimited BLAST Hits
 
 Write a Python program called "blastomatic.py" that takes a BLAST hits file (-outfmt 6, tab-delimited format) as a single positional argument and a named "--annotations" argument that is an annotations file that gives genus and species information for a given sequence ID. Check that both are actually files and die '"XXX" is not a file' if they are not. Iterate over the BLAST hits and use the sequence ID (`saccver`) to lookup the sequence in the annotations file so that you can print out the seq ID and the percent identity (`pident`) from the hits file along with the `genus` and `species` from the annotations file.
 
@@ -5690,7 +5763,219 @@ bfb6f5dfb4d0ef0842be8f5df6c86459  99.567  Prochlorococcus  MIT9313  NA
 
 \newpage
 
-# Chapter 30: Summarize Centrifuge Hits by Tax Name
+# Chapter 30: Parsing Putative Genes in Prodigal GFF
+
+Two of the most common output files in bioinformatics, GFF (General Feature Format) and BLAST's tab/CSV files *do not include headers*, so it's up to you to merge in the headers.  Additionally, some of the lines may be comments (they start with `#` just like bash and Python) or may be blank, so you should skip those.  Further, the last field in GFF is basically a dumping ground for whatever metadata the author felt like putting there.  Usually it's a bunch of "key=value" pairs, but there's no guarantee.  
+
+In our example, we have run the Prodigal gene predictor on a sample and wish to find putative genes with a minimum score. Prodigal can create output in either GenBank or GFF format, but the information contained is the same. Cf:
+
+https://github.com/hyattpd/Prodigal/wiki/Understanding-the-Prodigal-Output
+
+## GFF Structure
+
+Take a look at the GFF output from Prodigal in `HUMANGUT_SMPL_INB.fa.prodigal.gff`. The first line is:
+
+````
+##gff-version  3
+````
+
+The double `##` means the line is not just a comment but a "directive" or a "pragma" and says this file follows the conventions of GFF version 3 which can be found at https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md.
+
+According to the specifications, the columns are:
+
+1. seqid
+2. source
+3. type
+4. start
+5. end
+6. score
+7. strand
+8. phase
+9. attributes
+
+The ninth column reserves the following fields:
+
+* ID
+* Name
+* Alias
+* Parent
+* Target
+* Gap
+* Derives_from
+* Note
+* Dbxref
+* Ontology_term
+* Is_circular
+
+The second line is rather long and looks basically like this:
+
+````
+# Sequence Data: seqnum=1;seqlen=4867;
+seqhdr="HumanGut_CONTIG_00235296 
+/accession=HumanGut_CONTIG_00235296 
+/length=4867 /length=4867 
+/sample_id=1340106823570556171 
+/sample_acc=HUMANGUT_SMPL_INB 
+/sample_name=HUMANGUT_SMPL_INB 
+/site_id_n=HUMANGUT_SITE_INB"
+````
+
+This is metadata provided by Prodigal about the subject file. You can see there are a couple of levels of *key=value* pairs. First in the pairs separated by `;` (`seqnum`, `seqlen`, and `seqhdr`), and then `seqhdr` contains additional *key=value* pairs separated by spaces and starting with a `/`.
+
+The third line is also long and provides metadata about the model Prodigal used in the analysis:
+
+````
+# Model Data: version=Prodigal.v2.6.3;
+run_type=Single;model="Ab initio";gc_cont=54.91;transl_table=11;uses_sd=0
+````
+
+Finally on line 4 the actual data starts. We can inspect it with a bit of command-line fu:
+
+````
+$ awk 'NR==4' HUMANGUT_SMPL_INB.fa.prodigal.gff | tabchk.py -N -
+// ****** Record 1 ****** //
+Field1 : HumanGut_CONTIG_00235296
+Field2 : Prodigal_v2.6.3
+Field3 : CDS
+Field4 : 17
+Field5 : 157
+Field6 : 3.3
+Field7 : +
+Field8 : 0
+Field9 : ID=1_1;partial=00;start_type=GTG;rbs_motif=None;\
+rbs_spacer=None;gc_cont=0.688;conf=68.33;score=3.35;cscore=11.92;\
+sscore=-8.57;rscore=-4.31;uscore=-1.25;tscore=-3.01;
+````
+
+It's not helpful to see "Field1" and such, so let's add in the field names:
+
+````
+$ awk 'NR==4' HUMANGUT_SMPL_INB.fa.prodigal.gff | \
+> tabchk.py -f seqid,source,type,start,end,score,strand,frame,attributes -
+// ****** Record 1 ****** //
+seqid      : HumanGut_CONTIG_00235296
+source     : Prodigal_v2.6.3
+type       : CDS
+start      : 17
+end        : 157
+score      : 3.3
+strand     : +
+frame      : 0
+attributes : ID=1_1;partial=00;start_type=GTG;rbs_motif=None;rbs_spacer=None;\
+             gc_cont=0.688;conf=68.33;score=3.35;cscore=11.92;sscore=-8.57;\
+			 rscore=-4.31;uscore=-1.25;tscore=-3.01;
+````
+
+Now we'd like to find all the CDS records that had a `score` greater than some threshold. For that, we're going to need to check the `type` field and then find the `score` hidden in the `attributes` field. 
+
+Just to be sure, what are the values for the `type` field?
+
+````
+$ awk -F"\t" 'NR>4 {print ($3==""?"NA":$3)}' \
+> HUMANGUT_SMPL_INB.fa.prodigal.gff | sort | uniq -c
+ 356 CDS
+ 148 NA
+````
+
+## Parsing GFF with csv.DictReader
+
+BioPython does not yet include a GFF parser, so we'll just handle it ourselves. Besides, there's so much we can learn! As stated before, there may be some comment lines that start with `#` that we need to skip, and the data lines are 9 tab-delimited fields for which we have names. All of this can be succinctly described to the `csv.DictReader` like so:
+
+````
+flds = 'seqid source type start end score strand frame attributes'.split()
+reader = csv.DictReader(filter(lambda line: line[0] != '#', fh),
+                        fieldnames=flds,
+                        delimiter='\t')
+````
+
+The first argument to `csv.DictReader` should be a "stream" -- something that will produce the next line of input. An open file handle is usually what we pass, but it's also possible to use, say `io.StringIO` to make a string behave like a file handle. Here we are creating a `filter` object that will only allow lines from the `fh` that do not begin with `#`. We can also pass a list of `fieldnames`, and that the `delimiter` is a Tab character (`\t`). 
+
+We could write a *generator* function that would `yield` each line of the file like so:
+
+````
+def src():
+    for line in fh:
+        if line[0] != '#':
+            yield line
+
+reader = csv.DictReader(src(), fieldnames=flds, delimiter='\t')
+````
+
+If you have more complex logic than will comfortably fit into a `filter`, it might be better to write it like this.
+
+## Iterating GFF Records
+
+With our handy CSV `reader`, we can do `for rec in reader` to iterate over a sequence of dictionaries that look like this:
+
+````
+OrderedDict([('seqid', 'HumanGut_CONTIG_00235296'),
+             ('source', 'Prodigal_v2.6.3'),
+             ('type', 'CDS'),
+             ('start', '17'),
+             ('end', '157'),
+             ('score', '3.3'),
+             ('strand', '+'),
+             ('frame', '0'),
+             ('attributes',
+              'ID=1_1;partial=00;start_type=GTG;<...elided...>')])
+````
+
+I cut down the `attributes` for the moment. Since we only want "CDS" records, we `continue` (skip to the next iteration of the loop) `if rec['type'] != 'CDS'`. 
+
+## Parsing GFF Attributes
+
+The `rec['attributes']` are separated by the semi-colon `;`, so we can use that to `split` the string:
+
+````
+>>> attrs = 'ID=1_1;partial=00;start_type=GTG;rbs_motif=None;score=3.35'
+>>> attrs.split(';')
+['ID=1_1', 'partial=00', 'start_type=GTG', 'rbs_motif=None', 'score=3.35']
+````
+
+As it happens, they all have the structure "key=value", so we could `split` each of those on the equal sign `=`, but it's far safer to use a regular expression to validate that we have something that *really* looks like a key and value. This will make the script far more flexible and reusable!
+
+````
+>>> import re
+>>> kv = re.compile('([^=]+)=([^=]+)')
+>>> match = kv.match('partial=00')
+>>> match
+<re.Match object; span=(0, 10), match='partial=00'>
+>>> match.groups()
+('partial', '00')
+````
+
+When the `match` fails, it returns `None`, so it's important that we check that each attribute actually matched the regex. I chose to `map` each of the attributes into the regex. Note that here I introduce a fake attribute that won't match so you can see the `None`:
+
+````
+>>> attrs = 'ID=1_1;partial=00;start_type=GTG;rbs_motif=None;score=3.35;ABC'
+>>> from pprint import pprint as pp
+>>> pp(list(map(kv.match, attrs.split(';'))))
+[<re.Match object; span=(0, 6), match='ID=1_1'>,
+ <re.Match object; span=(0, 10), match='partial=00'>,
+ <re.Match object; span=(0, 14), match='start_type=GTG'>,
+ <re.Match object; span=(0, 14), match='rbs_motif=None'>,
+ <re.Match object; span=(0, 10), match='score=3.35'>,
+ None]
+````
+
+ 
+If there is a `match`, I use the `groups` method to unpack the two capturing groups into `key, value` so I can set my `attr` dictionary to those.
+ 
+## Printing Wanted Values
+ 
+Lastly we need to see if there is a `score` attribute by asking if that string exists in the keys of the `attrs` dictionary. If it does, we `try` to convert the value to a `float`. The `str` class has a very handy `isnumeric` method that can tell us if a string looks like an integer but it doesn't work with a float:
+
+````
+>>> '1'.isnumeric()
+True
+>>> '1.2'.isnumeric()
+False
+````
+
+We could write a regular expression to check if a string looks like a floating point number, but there are really quite a lot of ways to represent a float, so it's easier to just see if Python is able to make the conversion. If we fall into the `except` branch, we just `pass` on to the next record. Only if we can make the conversion of `score` to a float and if that value is greather than or equal to the given `min_score` do we print out the sequence ID and the `score`.
+\newpage
+
+# Chapter 31: Summarize Centrifuge Hits by Tax Name
 
 
 
@@ -5746,7 +6031,7 @@ bfb6f5dfb4d0ef0842be8f5df6c86459  99.567  Prochlorococcus  MIT9313  NA
 
 \newpage
 
-# Chapter 31: Find Pairwise Sample Geographic Distance
+# Chapter 32: Find Pairwise Sample Geographic Distance
 
 Given a list of sample/lat/lon, find/filter all pairwise sample distances.
 
@@ -6004,7 +6289,7 @@ alias blast6chk='tabchk.py -f "qseqid,sseqid,pident,length,mismatch,gapopen,qsta
 
 \newpage
 
-# Chapter 33: tab2json.py
+# Chapter 34: tab2json.py
 
 At some point I must have needed to turn a flat, delimited text file into a hierarchical, JSON structured, but I cannot at this moment remember why. Anyway, here's a program that will do that.
 
@@ -6118,7 +6403,7 @@ At some point I must have needed to turn a flat, delimited text file into a hier
 
 \newpage
 
-# Chapter 34: FASTA Summary With Seqmagique
+# Chapter 35: FASTA Summary With Seqmagique
 
 Now let's finally get into parsing good, old FASTA files.  We're going to need to install the BioPython (http://biopython.org/) module to get a FASTA parser.  This should work for you:
 
@@ -6227,7 +6512,7 @@ The code to produce this builds on our earlier skills of lists and dictionaries 
 
 \newpage
 
-# Chapter 35: FASTA subset
+# Chapter 36: FASTA subset
 
 Sometimes you may only want to use part of a FASTA file, e.g., you want the first 1000 sequences to test some code, or you have samples that vary wildly in size and you want to sub-sample them down to an equal number of reads.  Here is a Python program that will write the first N samples to a given output directory:
 
@@ -6365,7 +6650,7 @@ Sometimes you may only want to use part of a FASTA file, e.g., you want the firs
 
 \newpage
 
-# Chapter 36: Randomly Subset a FASTA file
+# Chapter 37: Randomly Subset a FASTA file
 
 Here is a version that will randomly select some percentage of the reads from the input file. I had to write this version because we had created an artificial metagenome from a set of known organisms, and I was testing a program with input of various numbers of reads. I did not realize at first that, in creating the artificial set, reads from each organism had been added in blocks. Since I was taking all my reads from the top of the file down, I was mostly getting just the first few species. Randomly selecting reads when there are potentially millions of records is a bit tricky, so I decided to use a non-deterministic approach where I just roll the dice and see if the number I get on each read is less than the percentage of reads I want to take. This program will also stop at a given number of reads so you could use it to randomly subset an unevenly sized number of samples down to the same number of reads per sample.
 
@@ -6510,7 +6795,7 @@ Here is a version that will randomly select some percentage of the reads from th
 
 \newpage
 
-# Chapter 37: FASTA splitter
+# Chapter 38: FASTA splitter
 
 I seem to have implemented my own FASTA splitter a few times in as many languages.  Here is one that writes a maximum number of sequences to each output file.  It would not be hard to instead write a maximum number of bytes, but, for the short reads I usually handle, this works fine.  Again I will use the BioPython `SeqIO` module to parse the FASTA files.
 
@@ -6725,7 +7010,7 @@ fasplit/CAM_SMPL_GS112.0010.fa      50
 
 \newpage
 
-# Chapter 38: FASTA Segregator by GC Content
+# Chapter 39: FASTA Segregator by GC Content
 
 Write a Python program called `gc.py` that takes 
 
@@ -6886,7 +7171,7 @@ Look back at the many examples of counting DNA to pick a method you like to coun
 
 \newpage
 
-# Chapter 39: FASTA Interleaved Paired Read Splitter
+# Chapter 40: FASTA Interleaved Paired Read Splitter
 
 Some sequencing platforms (e.g., Illumina) will create read pairs (forward/reverse) that may be interleaved together into one file with the forward read immediately followed by the reverse read or the reads may be in two separate files like `foo_1.fastq` and `foo_2.fastq` where `_1` is the forward read file and `_2` contains the reverse reads (or sometimes `_R1`/`_R2`). 
 
@@ -7013,7 +7298,7 @@ $ ./au_pair.py inputs/* -o all
 
 \newpage
 
-# Chapter 40: FASTQ to FASTA
+# Chapter 41: FASTQ to FASTA
 
 FASTA (sequence) plus "quality" scores for each base call gives us "FASTQ." Here is an example:
 
@@ -7193,7 +7478,7 @@ Can you write one in Python?
 
 \newpage
 
-# Chapter 41: Concatenate FASTX Files
+# Chapter 42: Concatenate FASTX Files
 
 Given a directory/list of FASTQ/A files like this:
 
@@ -7370,99 +7655,6 @@ Turn it into this:
    150	# --------------------------------------------------
    151	if __name__ == '__main__':
    152	    main()
-````
-
-\newpage
-
-# Chapter 42: Parsing GFF
-
-Two of the most common output files in bioinformatics, GFF (General Feature Format) and BLAST's tab/CSV files do not include headers, so it's up to you to merge in the headers.  Additionally, some of the lines may be comments (they start with `#` just like bash and Python), so you should skip those.  Further, the last field in GFF is basically a dumping ground for whatever else the data provider felt like putting there.  Usually it's a bunch of "key=value" pairs, but there's no guarantee.  Let's take a look at parsing the GFF output from Prodigal:
-
-\newpage
-
-## Solution
-
-````
-     1	#!/usr/bin/env python3
-     2	"""
-     3	Author:  Ken Youens-Clark <kyclark@gmail.com>
-     4	Purpose: Parse the GFF output of Prodigal
-     5	"""
-     6	
-     7	import argparse
-     8	import os
-     9	import sys
-    10	
-    11	
-    12	# --------------------------------------------------
-    13	def get_args():
-    14	    """get args"""
-    15	    parser = argparse.ArgumentParser(
-    16	        description='Prodigal GFF parser',
-    17	        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    18	
-    19	    parser.add_argument('gff', metavar='FILE', help='Prodigal GFF file')
-    20	
-    21	    parser.add_argument(
-    22	        '-m',
-    23	        '--min',
-    24	        help='Min score',
-    25	        metavar='float',
-    26	        type=float,
-    27	        default=0)
-    28	
-    29	    return parser.parse_args()
-    30	
-    31	
-    32	# --------------------------------------------------
-    33	def warn(msg):
-    34	    """Print a message to STDERR"""
-    35	    print(msg, file=sys.stderr)
-    36	
-    37	
-    38	# --------------------------------------------------
-    39	def die(msg='Something bad happened'):
-    40	    """warn() and exit with error"""
-    41	    warn(msg)
-    42	    sys.exit(1)
-    43	
-    44	
-    45	# --------------------------------------------------
-    46	def main():
-    47	    """main"""
-    48	    args = get_args()
-    49	    gff_file = args.gff
-    50	    min_score = args.min
-    51	
-    52	    if not os.path.isfile(gff_file):
-    53	        die('GFF "{}" is not a file'.format(gff_file))
-    54	
-    55	    flds = [
-    56	        'seqname', 'source', 'feature', 'start', 'end', 'score', 'strand',
-    57	        'frame', 'attribute'
-    58	    ]
-    59	
-    60	    for line in open(gff_file):
-    61	        if line.startswith('#'):
-    62	            continue
-    63	
-    64	        vals = line.rstrip().split('\t')
-    65	        rec = dict(zip(flds, vals))
-    66	        attrs = {}
-    67	
-    68	        for x in rec['attribute'].split(';'):
-    69	            if '=' in x:
-    70	                key, value = x.split('=')
-    71	                attrs[key] = value
-    72	
-    73	        score = attrs.get('score')
-    74	        if score is not None and float(score) >= min_score:
-    75	            print('{} {}'.format(rec['seqname'], score))
-    76	
-    77	
-    78	# --------------------------------------------------
-    79	if __name__ == '__main__':
-    80	    main()
 ````
 
 \newpage

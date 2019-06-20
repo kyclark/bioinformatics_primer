@@ -69,8 +69,8 @@ def main():
         root, _ = os.path.splitext(basename)
         out_path = os.path.join(out_dir, root + out_ext)
         print('{:3}: {}'.format(i, basename))
-        commands.append('samtools {} "{}" > {}'.format(
-            out_fmt, file, out_path))
+        commands.append('samtools {} "{}" > {}'.format(out_fmt, file,
+                                                       out_path))
     try:
         run(commands, halt=1, num_procs=args.procs, verbose=args.verbose)
     except Exception as e:

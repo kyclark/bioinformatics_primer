@@ -72,7 +72,9 @@ def main():
         commands.append('samtools {} "{}" > {}'.format(out_fmt, file,
                                                        out_path))
     try:
-        run(commands, halt=1, num_procs=args.procs, verbose=args.verbose)
+        ok = run(commands, halt=1, num_procs=args.procs, verbose=args.verbose)
+        if not ok:
+            print('Something went wrong')
     except Exception as e:
         print(e)
 

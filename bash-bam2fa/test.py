@@ -10,7 +10,8 @@ from shutil import rmtree
 from Bio import SeqIO
 
 prg = './bam2fa.sh'
-in_dir = '../inputs'
+bam1 = '../inputs/test1.bam'
+bam2 = '../inputs/test2.bam'
 
 
 # --------------------------------------------------
@@ -55,11 +56,26 @@ def test_bad_dir():
     bad = random_filename()
     rv, out = getstatusoutput('{} {} out'.format(prg, bad))
     assert rv > 0
-    assert out.rstrip() == 'Bad IN_DIR "{}"'.format(bad)
+    assert out.rstrip() == 'INPUT "{}" neither file nor directory!'.format(bad)
 
 
 # --------------------------------------------------
-def test_runs():
+def test_bam1():
+    run(bam1, [('test1.fa', 290)])
+
+
+# --------------------------------------------------
+def test_bam2():
+    run(bam2, [('test2.fa', 410)])
+
+
+# --------------------------------------------------
+def test_dir():
+    run('../inputs', [('test1.fa', 290), ('test2.fa', 410)])
+
+
+# --------------------------------------------------
+def run(input_arg, expected_files):
     """runs"""
 
     out_dir = random_filename()
@@ -69,7 +85,7 @@ def test_runs():
         rmtree(out_dir)
 
     try:
-        rv, out = getstatusoutput('{} {} {}'.format(prg, in_dir, out_dir))
+        rv, out = getstatusoutput('{} {} {}'.format(prg, input_arg, out_dir))
         assert rv == 0
         expected = 'Done, see output in "{}"'.format(out_dir)
         assert out.splitlines()[-1].rstrip() == expected
@@ -77,11 +93,12 @@ def test_runs():
         assert os.path.isdir(out_dir)
 
         files = os.listdir(out_dir)
-        assert len(files) == 1
 
-        fasta = os.path.join(out_dir, files[0])
-        seqs = list(SeqIO.parse(fasta, 'fasta'))
-        assert len(seqs) == 290
+        for filename, num in expected_files:
+            assert filename in files
+            fasta = os.path.join(out_dir, filename)
+            seqs = list(SeqIO.parse(fasta, 'fasta'))
+            assert len(seqs) == num
 
     finally:
         if os.path.isdir(out_dir):

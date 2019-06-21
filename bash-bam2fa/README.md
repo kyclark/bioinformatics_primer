@@ -8,21 +8,36 @@ It's common to get SAM/BAM formats from a sequencing core as your sequences are 
 
 ## Checking and unpacking arguments
 
-After using `set -u` to catch basic mistakes, we check `$#` to see how many arguments we have (mnemonic: `#` is the symbol for "number"). We need at least one argument but no more than 3. Print a usage if needed. Then we put `$1`, `$2`, etc. into judiciously named variables that describe what they are. Too often I see programs where `$1` is used throughout; while valid, this makes the code unreadable whereas `$IN_DIR` reminds me what the variable is supposed to be.
-
-## Testing directories
-
-The test `-d $IN_DIR` will be "True" if the string in `$IN_DIR` names a directory that exists. (Use `man test` to see other tests you can use.) We use `!` to negate it, meaning there is no directory with that name. If this is the case, we report the error and `exit 1`. It's very important to `exit` with a *non-zero exit code* when there is an error. If you are using `make` or `parallel` or other programs to chain this, you can ensure the chain will fail if a component fails. *This is wise and good.* You do not want to complete an analysis pipeline if some key step fails. You want to report errors and halt processing until the error is fixed!
-
-Likewise with testing `$IN_DIR`, we test if `$OUT_DIR` exists and create it with `mkdir -p` if it does not. The `-p` option tells `mkdir` to create "parent" directories as needed. If the user wanted the output files to go into `$HOME/projects/foo/bar/fasta`, `mkdir` would fail if all the directories up to `fasta` didn't exist. With `-p` it will create any needed parent directories.
+After using `set -u` to catch basic mistakes, we check `$#` to see how many arguments we have (mnemonic: `#` is the symbol for "number"). We need at least one argument but no more than 3. Print a usage if needed. Then we put `$1`, `$2`, etc. into judiciously named variables that describe what they are. Too often I see programs where `$1` is used throughout; while valid, this makes the code unreadable whereas `$INPUT` reminds me what the variable is supposed to be.
 
 ## Finding input files
 
-Next I want to `find` inside `$IN_DIR` any files with a `-name` ending with `.bam` that are greater in `-size` than 0 characters/bytes. I put these into a temporary file so I can count them and later iterate over them. I do not like using the `bash` syntax for lists, so I always put lists of things into files. I find the number of lines in the file using `wc -l` and see if `$NUM` is less than one (`-lt 1`). If so, I alert the user and `exit 1` to indicate an error.
+The program is written so that it can either take the name of a file or a directory of files. I create temporary file `$FILES` to hold the input filenames. The `-f $INPUT` will be "True" if the argument is a file, so we `echo` the input value into the tempfile. If `-d $IN_DIR` is "True," then it names a directory that exists and so we `find` in there anything with a `-name` ending in `.bam` with a `-size` greater that `0` characters/bytes and send the output of that command into `$FILES`. If neither of these are true, we report an error and `exit 1`. 
 
 ## Temporary files
 
 I prefer to use `mktemp` to get a temporary file. You could just overwrite a statically named `files.txt` file if you want, but you run the risk of accidentally overwriting a file that is still being used by another process. It's much safer to use `mktemp` as it guarantees a uniquely named file in a temporary directory. Additionally, if you forget to `rm` the file when you are done, it will likely be created in a location where old, unused files are regularly removed by the system.
+
+## Exit codes
+
+It's very important to `exit` with a *non-zero exit code* when there is an error. If you are using `make` or `parallel` or other programs to chain this, you can ensure the chain will fail if a component fails. *This is wise and good.* You do not want to complete an analysis pipeline if some key step fails. You want to report errors and halt processing until the error is fixed!
+
+## Counting inputs
+
+Since I've put all the input file names into a file, we need to count how many files there are which is what `wc -l` tells us. We need to do a bit of acrobatics to ensure we get only the number and not the name of the file, too:
+
+````
+$ wc -l bam2fa.sh
+      67 bam2fa.sh
+$ wc -l bam2fa.sh | awk '{print $1}'
+67
+````
+
+With that, we can ask `bash` to coerce the string value into a number and see if it is less than 1 (`$NUM -lt 1`). If so, we exit with an error message and a non-zero `exit` value.
+
+## Making output directory
+
+We test if `! -d $OUT_DIR` to ask if this directory *does not* exist. If so, we create it with `mkdir -p` where the `-p` option tells `mkdir` to create "parent" directories as needed. That is, if the user wanted the output files to go into `$HOME/projects/foo/bar/fasta`, `mkdir` would fail if all the parent directories up to `fasta` if they didn't already exist. Without `-p`, `mkdir` would fail if any of the parent directories were not present.
 
 ## Create jobs file
 

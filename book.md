@@ -2107,6 +2107,80 @@ This program shows you how to find input files, create an output directory, use 
 
 \newpage
 
+## Solution
+
+````
+     1	#!/usr/bin/env bash
+     2	# Convert BAM files to FASTA
+     3	
+     4	set -u
+     5	
+     6	# Check number of arguments
+     7	if [[ $# -lt 2 ]] || [[ $# -gt 3 ]]; then
+     8	    echo "Usage: $(basename "$0") INPUT OUT_DIR [CORES]" 
+     9	    exit 1
+    10	fi
+    11	
+    12	# Assign arguments into named variable
+    13	INPUT=$1
+    14	OUT_DIR=$2
+    15	CORES=${3:-40} # default
+    16	
+    17	
+    18	# Find input files
+    19	FILES=$(mktemp)
+    20	if [[ -f "$INPUT" ]]; then
+    21	    echo "$INPUT" > "$FILES"
+    22	elif [[ -d "$INPUT" ]]; then
+    23	    find "$INPUT" -name \*.bam -size +0c > "$FILES"
+    24	else
+    25	    echo "INPUT \"$INPUT\" neither file nor directory!"
+    26	    exit 1
+    27	fi
+    28	
+    29	# Check that we have input
+    30	NUM=$(wc -l "$FILES" | awk '{print $1}')
+    31	if [[ $NUM -lt 1 ]]; then
+    32	    echo "No BAM files in IN_DIR \"$IN_DIR\""
+    33	    exit 1
+    34	fi
+    35	
+    36	# Make output directory if necessary
+    37	[[ ! -d "$OUT_DIR" ]] && mkdir -p "$OUT_DIR"
+    38	
+    39	# Iterate BAM file in input directory, create samtools command
+    40	JOBS=$(mktemp)
+    41	i=0
+    42	while read -r BAM; do
+    43	    i=$((i+1))
+    44	    BASE=$(basename "$BAM" ".bam")
+    45	    printf "%3d: %s\\n" $i "$BASE"
+    46	
+    47	    # Only process if FASTA does not exist
+    48	    FASTA="$OUT_DIR/$BASE.fa"
+    49	    if [[ ! -f "$FASTA" ]]; then
+    50	        echo "samtools fasta \"$BAM\" > \"$FASTA\"" >> "$JOBS"
+    51	    fi
+    52	done < "$FILES"
+    53	
+    54	# Look for parallel
+    55	PARALLEL=$(which parallel)
+    56	if [[ -z "$PARALLEL" ]]; then
+    57	    echo "Running serially, install GNU parallel for speed!"
+    58	    sh "$JOBS"
+    59	else
+    60	    echo "Running with $CORES cores in parallel"
+    61	    parallel -j "$CORES" --halt soon,fail=1 < "$JOBS"
+    62	fi
+    63	
+    64	# Remove temp files, exit
+    65	rm "$FILES"
+    66	rm "$JOBS"
+    67	echo "Done, see output in \"$OUT_DIR\""
+````
+
+\newpage
+
 # Chapter 5: Bash: FASTQ-to-FASTA Converter (fq2fa)
 
 Given a list of FASTQ files or directories containing FASTQ files, convert them to FASTA using `parallel`.
@@ -5919,6 +5993,109 @@ False
 ````
 
 We could write a regular expression to check if a string looks like a floating point number, but there are really quite a lot of ways to represent a float, so it's easier to just see if Python is able to make the conversion. If we fall into the `except` branch, we just `pass` on to the next record. Only if we can make the conversion of `score` to a float and if that value is greather than or equal to the given `min_score` do we print out the sequence ID and the `score`.
+\newpage
+
+## Solution
+
+````
+     1	#!/usr/bin/env python3
+     2	"""Parse the GFF output of Prodigal"""
+     3	
+     4	import argparse
+     5	import csv
+     6	import os
+     7	import re
+     8	import sys
+     9	
+    10	
+    11	# --------------------------------------------------
+    12	def get_args():
+    13	    """get args"""
+    14	    parser = argparse.ArgumentParser(
+    15	        description='Prodigal GFF parser',
+    16	        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    17	
+    18	    parser.add_argument('file',
+    19	                        metavar='FILE',
+    20	                        type=argparse.FileType('r'),
+    21	                        help='Prodigal GFF file')
+    22	
+    23	    parser.add_argument('-t',
+    24	                        '--type',
+    25	                        help='Feature type',
+    26	                        metavar='str',
+    27	                        type=str,
+    28	                        default='')
+    29	
+    30	    parser.add_argument('-o',
+    31	                        '--outfile',
+    32	                        help='Output file',
+    33	                        metavar='str',
+    34	                        type=str,
+    35	                        default=None)
+    36	
+    37	    parser.add_argument('-m',
+    38	                        '--min',
+    39	                        help='Min score',
+    40	                        metavar='float',
+    41	                        type=float,
+    42	                        default=0.)
+    43	
+    44	    return parser.parse_args()
+    45	
+    46	
+    47	# --------------------------------------------------
+    48	def main():
+    49	    """Make a jazz noise here"""
+    50	
+    51	    args = get_args()
+    52	    fh = args.file
+    53	    min_score = args.min
+    54	    feature_type = args.type
+    55	    out_fh = open(args.outfile, 'wt') if args.outfile else sys.stdout
+    56	    flds = 'seqid source type start end score strand frame attributes'.split()
+    57	
+    58	    # Method 1: Write a generator
+    59	    # def src():
+    60	    #     for line in fh:
+    61	    #         if line[0] != '#':
+    62	    #             yield line
+    63	    # reader = csv.DictReader(src(), fieldnames=flds, delimiter='\t')
+    64	
+    65	    # Method 2: Use a `filter`
+    66	    reader = csv.DictReader(filter(lambda line: line[0] != '#', fh),
+    67	                            fieldnames=flds,
+    68	                            delimiter='\t')
+    69	
+    70	    print('\t'.join(['seqid', 'type', 'score']), file=out_fh)
+    71	
+    72	    kv = re.compile('([^=]+)=([^=]+)')
+    73	    for rec in reader:
+    74	        if feature_type and rec['type'] != feature_type:
+    75	            continue
+    76	
+    77	        attrs = {}
+    78	        for match in map(kv.match, rec['attributes'].split(';')):
+    79	            if match:
+    80	                key, value = match.groups()
+    81	                attrs[key] = value
+    82	
+    83	        if 'score' in attrs:
+    84	            try:
+    85	                score = float(attrs['score'])
+    86	                if score >= min_score:
+    87	                    print('\t'.join(
+    88	                        map(str, [rec['seqid'], rec['type'], score])),
+    89	                          file=out_fh)
+    90	            except:
+    91	                pass
+    92	
+    93	
+    94	# --------------------------------------------------
+    95	if __name__ == '__main__':
+    96	    main()
+````
+
 \newpage
 
 # Chapter 31: Summarize Centrifuge Hits by Tax Name

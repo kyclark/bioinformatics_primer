@@ -53,6 +53,7 @@ fasta-filter-tax
 filter-centrifuge
 parsing-pubmed-json
 python-unclustered-proteins
+python-paired-reads
 iupac-codes
 parsing-dates-re
 sqlite
@@ -62,6 +63,7 @@ grph
 common-words
 common-kmers
 bubble-plot
+python-bubble-plot
 python-pipelines
 python-bam2fx
 blast-pipeline

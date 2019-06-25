@@ -2036,21 +2036,36 @@ It's common to get SAM/BAM formats from a sequencing core as your sequences are 
 
 ## Checking and unpacking arguments
 
-After using `set -u` to catch basic mistakes, we check `$#` to see how many arguments we have (mnemonic: `#` is the symbol for "number"). We need at least one argument but no more than 3. Print a usage if needed. Then we put `$1`, `$2`, etc. into judiciously named variables that describe what they are. Too often I see programs where `$1` is used throughout; while valid, this makes the code unreadable whereas `$IN_DIR` reminds me what the variable is supposed to be.
-
-## Testing directories
-
-The test `-d $IN_DIR` will be "True" if the string in `$IN_DIR` names a directory that exists. (Use `man test` to see other tests you can use.) We use `!` to negate it, meaning there is no directory with that name. If this is the case, we report the error and `exit 1`. It's very important to `exit` with a *non-zero exit code* when there is an error. If you are using `make` or `parallel` or other programs to chain this, you can ensure the chain will fail if a component fails. *This is wise and good.* You do not want to complete an analysis pipeline if some key step fails. You want to report errors and halt processing until the error is fixed!
-
-Likewise with testing `$IN_DIR`, we test if `$OUT_DIR` exists and create it with `mkdir -p` if it does not. The `-p` option tells `mkdir` to create "parent" directories as needed. If the user wanted the output files to go into `$HOME/projects/foo/bar/fasta`, `mkdir` would fail if all the directories up to `fasta` didn't exist. With `-p` it will create any needed parent directories.
+After using `set -u` to catch basic mistakes, we check `$#` to see how many arguments we have (mnemonic: `#` is the symbol for "number"). We need at least one argument but no more than 3. Print a usage if needed. Then we put `$1`, `$2`, etc. into judiciously named variables that describe what they are. Too often I see programs where `$1` is used throughout; while valid, this makes the code unreadable whereas `$INPUT` reminds me what the variable is supposed to be.
 
 ## Finding input files
 
-Next I want to `find` inside `$IN_DIR` any files with a `-name` ending with `.bam` that are greater in `-size` than 0 characters/bytes. I put these into a temporary file so I can count them and later iterate over them. I do not like using the `bash` syntax for lists, so I always put lists of things into files. I find the number of lines in the file using `wc -l` and see if `$NUM` is less than one (`-lt 1`). If so, I alert the user and `exit 1` to indicate an error.
+The program is written so that it can either take the name of a file or a directory of files. I create temporary file `$FILES` to hold the input filenames. The `-f $INPUT` will be "True" if the argument is a file, so we `echo` the input value into the tempfile. If `-d $IN_DIR` is "True," then it names a directory that exists and so we `find` in there anything with a `-name` ending in `.bam` with a `-size` greater that `0` characters/bytes and send the output of that command into `$FILES`. If neither of these are true, we report an error and `exit 1`. 
 
 ## Temporary files
 
 I prefer to use `mktemp` to get a temporary file. You could just overwrite a statically named `files.txt` file if you want, but you run the risk of accidentally overwriting a file that is still being used by another process. It's much safer to use `mktemp` as it guarantees a uniquely named file in a temporary directory. Additionally, if you forget to `rm` the file when you are done, it will likely be created in a location where old, unused files are regularly removed by the system.
+
+## Exit codes
+
+It's very important to `exit` with a *non-zero exit code* when there is an error. If you are using `make` or `parallel` or other programs to chain this, you can ensure the chain will fail if a component fails. *This is wise and good.* You do not want to complete an analysis pipeline if some key step fails. You want to report errors and halt processing until the error is fixed!
+
+## Counting inputs
+
+Since I've put all the input file names into a file, we need to count how many files there are which is what `wc -l` tells us. We need to do a bit of acrobatics to ensure we get only the number and not the name of the file, too:
+
+````
+$ wc -l bam2fa.sh
+      67 bam2fa.sh
+$ wc -l bam2fa.sh | awk '{print $1}'
+67
+````
+
+With that, we can ask `bash` to coerce the string value into a number and see if it is less than 1 (`$NUM -lt 1`). If so, we exit with an error message and a non-zero `exit` value.
+
+## Making output directory
+
+We test if `! -d $OUT_DIR` to ask if this directory *does not* exist. If so, we create it with `mkdir -p` where the `-p` option tells `mkdir` to create "parent" directories as needed. That is, if the user wanted the output files to go into `$HOME/projects/foo/bar/fasta`, `mkdir` would fail if all the parent directories up to `fasta` if they didn't already exist. Without `-p`, `mkdir` would fail if any of the parent directories were not present.
 
 ## Create jobs file
 
@@ -2089,6 +2104,7 @@ Finally we remove (`rm`) our temporary files and say good-bye to the user. I alw
 ## Summary
 
 This program shows you how to find input files, create an output directory, use temporary files, process input files with some program, and run those processes either serially or in parallel. This program weighs in at just over 60 lines, which is about the maximum number I feel comfortable writing in `bash`. It's a capable program, but if I wanted it to do much more, I'd be more comfortable writing it in Python.
+
 \newpage
 
 # Chapter 5: Bash: FASTQ-to-FASTA Converter (fq2fa)
@@ -8822,7 +8838,111 @@ Once you know which protein IDs were clustered, go through the `proteins.fa` fil
 
 \newpage
 
-# Chapter 52: Expanding DNA IUPAC Codes with Regular Expression
+# Chapter 52: Detecting Paired and Unpaired Reads
+
+\newpage
+
+## Solution
+
+````
+     1	#!/usr/bin/env python3
+     2	"""Find paired reads"""
+     3	
+     4	import argparse
+     5	import os
+     6	import re
+     7	import sys
+     8	from collections import defaultdict
+     9	
+    10	
+    11	# --------------------------------------------------
+    12	def get_args():
+    13	    """Get command-line arguments"""
+    14	
+    15	    parser = argparse.ArgumentParser(
+    16	        description='Run KrakenUniq',
+    17	        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    18	
+    19	    parser.add_argument('-q',
+    20	                        '--query',
+    21	                        metavar='str',
+    22	                        help='Input file/directory',
+    23	                        nargs='+',
+    24	                        required=True)
+    25	
+    26	    args = parser.parse_args()
+    27	
+    28	    for q in args.query:
+    29	        if not any([os.path.isdir(q), os.path.isfile(q)]):
+    30	            parser.error('--query "{}" neither file nor directory'.format(q))
+    31	
+    32	    return args
+    33	
+    34	
+    35	# --------------------------------------------------
+    36	def unique_extensions(files):
+    37	    exts = set()
+    38	    for file in files:
+    39	        _, ext = os.path.splitext(file)
+    40	        exts.add(ext[1:])  # skip leading "."
+    41	
+    42	    return exts
+    43	
+    44	
+    45	# --------------------------------------------------
+    46	def find_input_files(query):
+    47	    """Find input files from list of files/dirs"""
+    48	
+    49	    files = []
+    50	    for qry in query:
+    51	        if os.path.isdir(qry):
+    52	            for filename in os.scandir(qry):
+    53	                if filename.is_file():
+    54	                    files.append(filename.path)
+    55	        elif os.path.isfile(qry):
+    56	            files.append(qry)
+    57	        else:
+    58	            raise Exception(
+    59	                'query "{}" neither file nor directory'.format(qry))
+    60	
+    61	    extensions = unique_extensions(files)
+    62	    paired_re = re.compile('(.+)[_-][Rr]?[12](?:_\d+)?\.(?:' +
+    63	                           '|'.join(extensions) + ')$')
+    64	
+    65	    unpaired = []
+    66	    paired = defaultdict(list)
+    67	    for fname in files:
+    68	        basename = os.path.basename(fname)
+    69	        paired_match = paired_re.search(basename)
+    70	
+    71	        if paired_match:
+    72	            sample_name = paired_match.group(1)
+    73	            paired[sample_name].append(fname)
+    74	        else:
+    75	            unpaired.append(fname)
+    76	
+    77	    return paired, unpaired
+    78	
+    79	
+    80	# --------------------------------------------------
+    81	def main():
+    82	    """Make a jazz noise here"""
+    83	
+    84	    args = get_args()
+    85	
+    86	    paired, unpaired = find_input_files(args.query)
+    87	
+    88	    print(paired)
+    89	    print(unpaired)
+    90	
+    91	# --------------------------------------------------
+    92	if __name__ == '__main__':
+    93	    main()
+````
+
+\newpage
+
+# Chapter 53: Expanding DNA IUPAC Codes with Regular Expression
 
 Write a program called `iupac.py` that translates an IUPAC-encoded (https://www.bioinformatics.org/sms/iupac.html) string of DNA into a regular expression that will match all the possible strings of DNA that match.
 
@@ -8978,7 +9098,7 @@ CGT OK
 
 \newpage
 
-# Chapter 53: Parsing Date Formats with Regular Expressions 
+# Chapter 54: Parsing Date Formats with Regular Expressions 
 
 Write a Python program called `dates.py` that takes as a single, positional argument a string and attempt to parse it as one of the given date formats. If given no argument, it should print a usage statement. It does not need to respond to `-h|--help`, so you could use `new_py.py` without the argparse flag.
 
@@ -9124,7 +9244,7 @@ While there are date parsing modules, I do not want you to use those in your cod
 
 \newpage
 
-# Chapter 54: SQLite in Python
+# Chapter 55: SQLite in Python
 
 SQLite (https://www.sqlite.org) is a lightweight, SQL/relational database that is available by default with Python (https://docs.python.org/3/library/sqlite3.html).  By using `import sqlite3` you can interact with an SQLite database.  So, let's create one, returning to our earlier Centrifuge output.  Here is the file "tables.sql" containing the SQL statements needed to drop and create the tables:
 
@@ -9644,7 +9764,7 @@ YELLOWSTONE_SMPL_20723  Synechococcus sp. JA-3-3Ab         6432         0.98
 
 \newpage
 
-# Chapter 55: Finding Longhurst Province Using GeoJSON
+# Chapter 56: Finding Longhurst Province Using GeoJSON
 
 Using shapes
 
@@ -9680,7 +9800,7 @@ Using shapes
 
 \newpage
 
-# Chapter 56: Finding K-mers in Text
+# Chapter 57: Finding K-mers in Text
 
 ````
 $ ./kmer_tiler.py foobar
@@ -9724,7 +9844,7 @@ foo
 
 \newpage
 
-# Chapter 57: Using De Bruijn Graphs to Assemble Sequences
+# Chapter 58: Using De Bruijn Graphs to Assemble Sequences
 
 We will find paths through sequences that could aid in assembly (cf http://rosalind.info/problems/grph/). For this exercise, we will only attempt to join any two sequences together. To do this, we will look at the last `k` characters of every sequence and find where the first `k` character of a *different* sequence are the same. 
 
@@ -9863,7 +9983,7 @@ You will write a Python program called `grph.py` which will take a `-k|--overlap
 
 \newpage
 
-# Chapter 58: Find Sequences With Point Mutations (SNPs)
+# Chapter 59: Find Sequences With Point Mutations (SNPs)
 
 Write a Python program called `commoner.py` that takes exactly two positional arguments which should be text files that you will read and find words that are found to be in common. The program should also accept a `-m|--min_len` option (integer) which is the minimum length for a word to be included (so that we can avoid common short words like articles and "I", etc.) as well as a `-n|--hamming_distance` (integer) value that is the maximum allowed Hamming (edit) distance to consider two words to be the same. There should also be two options for debugging, one `-d|--debug` that turns on logging into a `-l|--logfile` option that defaults to `.log`. Lastly, the program should have a `-t|--table` option that indicates the output should be formatted into an ASCII table using the `tabulate` module (https://pypi.org/project/tabulate/); the default output (that is, without `-t`) should be tab-delimited text.
 
@@ -10249,7 +10369,7 @@ The Makefile's `test` target is `pytest -v commoner.py test.py`. Notice how it's
 
 \newpage
 
-# Chapter 59: Sequence Similarity Using Shared k-mers
+# Chapter 60: Sequence Similarity Using Shared k-mers
 
 Another way to explore sequence similarity.
 
@@ -10317,7 +10437,7 @@ Another way to explore sequence similarity.
 
 \newpage
 
-# Chapter 60: Species Abundance Bubble Plot
+# Chapter 61: Species Abundance Bubble Plot
 
 Centrifuge is a program that will make taxonomic assignments to short DNA reads. Write a program called `plot.py` that will read the `.tsv` output file from Centrifuge that gives a summary of the species and abundance for a given sample. The program should take the output directory containing a number of samples and use `matplotlib` to create a bubble plot showing the abundance of taxa at various `-r|--rank` assignments.
 
@@ -10499,7 +10619,265 @@ optional arguments:
 
 \newpage
 
-# Chapter 61: Writing Pipelines in Python
+# Chapter 62: Creating a Bubble Chart with pandas and matplotlib
+
+
+
+\newpage
+
+## Solution
+
+````
+     1	#!/usr/bin/env python3
+     2	"""Generic bubble plot"""
+     3	
+     4	import argparse
+     5	import csv
+     6	import os
+     7	import re
+     8	import pandas as pd
+     9	import matplotlib.pyplot as plt
+    10	import sys
+    11	from dire import die
+    12	
+    13	
+    14	# --------------------------------------------------
+    15	def get_args():
+    16	    """Get command-line arguments"""
+    17	
+    18	    parser = argparse.ArgumentParser(
+    19	        description='Plot Centrifuge out',
+    20	        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    21	
+    22	    parser.add_argument('file',
+    23	                        metavar='FILE',
+    24	                        type=str,
+    25	                        help='Data',
+    26	                        nargs='+')
+    27	
+    28	    parser.add_argument('-S',
+    29	                        '--sep',
+    30	                        help='Field separator',
+    31	                        metavar='str',
+    32	                        type=str,
+    33	                        default='')
+    34	
+    35	    parser.add_argument('-x',
+    36	                        '--x_axis',
+    37	                        help='Column for x-axis',
+    38	                        metavar='str',
+    39	                        type=str,
+    40	                        default='')
+    41	
+    42	    parser.add_argument('-y',
+    43	                        '--y_axis',
+    44	                        help='Column for y-axis',
+    45	                        metavar='str',
+    46	                        type=str,
+    47	                        default='')
+    48	
+    49	    parser.add_argument('-s',
+    50	                        '--s_axis',
+    51	                        help='Column for s-axis',
+    52	                        metavar='str',
+    53	                        type=str,
+    54	                        default='')
+    55	
+    56	    parser.add_argument('-X',
+    57	                        '--x_label',
+    58	                        help='Label for x-axis',
+    59	                        metavar='str',
+    60	                        type=str,
+    61	                        default='')
+    62	
+    63	    parser.add_argument('-Y',
+    64	                        '--y_label',
+    65	                        help='Label for y-axis',
+    66	                        metavar='str',
+    67	                        type=str,
+    68	                        default='')
+    69	
+    70	    parser.add_argument('--x_exclude',
+    71	                        help='Exclude values from x',
+    72	                        metavar='str',
+    73	                        type=str,
+    74	                        nargs='*')
+    75	
+    76	    parser.add_argument('--y_exclude',
+    77	                        help='Exclude values from y',
+    78	                        metavar='str',
+    79	                        type=str,
+    80	                        nargs='*')
+    81	
+    82	    parser.add_argument('-t',
+    83	                        '--title',
+    84	                        help='Image title',
+    85	                        metavar='str',
+    86	                        type=str,
+    87	                        default='')
+    88	
+    89	    parser.add_argument('-m',
+    90	                        '--multiplier',
+    91	                        help='Multiplier',
+    92	                        metavar='float',
+    93	                        type=float,
+    94	                        default=1.)
+    95	
+    96	    parser.add_argument('-w',
+    97	                        '--image_width',
+    98	                        help='Image width',
+    99	                        metavar='float',
+   100	                        type=float,
+   101	                        default=0.)
+   102	
+   103	    parser.add_argument('-H',
+   104	                        '--image_height',
+   105	                        help='Image height',
+   106	                        metavar='float',
+   107	                        type=float,
+   108	                        default=0.)
+   109	
+   110	    parser.add_argument('-o',
+   111	                        '--outfile',
+   112	                        help='Output file',
+   113	                        metavar='str',
+   114	                        type=str,
+   115	                        default='')
+   116	
+   117	    parser.add_argument('-f',
+   118	                        '--format',
+   119	                        help='Ouput format',
+   120	                        metavar='str',
+   121	                        type=str,
+   122	                        choices=['png', 'pdf'],
+   123	                        default='pdf')
+   124	
+   125	    parser.add_argument('-r',
+   126	                        '--sort',
+   127	                        help='Sort data by x/y',
+   128	                        action='store_true')
+   129	
+   130	    parser.add_argument('-l',
+   131	                        '--list_cols',
+   132	                        help='Show column list and quit',
+   133	                        action='store_true')
+   134	
+   135	    parser.add_argument('-O',
+   136	                        '--open_image',
+   137	                        help='Open the image when done',
+   138	                        action='store_true')
+   139	
+   140	    return parser.parse_args()
+   141	
+   142	
+   143	# --------------------------------------------------
+   144	def main():
+   145	    """Make a jazz noise here"""
+   146	
+   147	    args = get_args()
+   148	
+   149	    for file in args.file:
+   150	        basename = os.path.basename(file)
+   151	        x_axis = args.x_axis
+   152	        y_axis = args.y_axis
+   153	        s_axis = args.s_axis
+   154	        title = args.title or basename
+   155	        sep = args.sep
+   156	
+   157	        if not sep:
+   158	            _, ext = os.path.splitext(basename)
+   159	            sep = ',' if ext == '.csv' else '\t'
+   160	
+   161	        df = pd.read_csv(file, sep=sep)
+   162	        col_names = df.columns
+   163	        nrows, ncols = df.shape
+   164	
+   165	        if args.list_cols:
+   166	            print('Columns in "{}"\n{}\n'.format(
+   167	                basename, '\n'.join(
+   168	                    map(lambda t: '{:3}: {}'.format(*t),
+   169	                        enumerate(col_names, 1)))))
+   170	            sys.exit(0)
+   171	
+   172	        if x_axis and x_axis.isdigit() and not x_axis in col_names:
+   173	            x_axis = col_names[int(x_axis) - 1]
+   174	
+   175	        if y_axis and y_axis.isdigit() and not y_axis in col_names:
+   176	            y_axis = col_names[int(y_axis) - 1]
+   177	
+   178	        if s_axis and s_axis.isdigit() and not s_axis in col_names:
+   179	            s_axis = col_names[int(s_axis) - 1]
+   180	
+   181	        if not x_axis and ncols >= 1:
+   182	            x_axis = col_names[0]
+   183	
+   184	        if not y_axis and ncols >= 2:
+   185	            y_axis = col_names[1]
+   186	
+   187	        if not s_axis and ncols >= 3:
+   188	            s_axis = col_names[2]
+   189	
+   190	        if not x_axis in col_names:
+   191	            die('--x_axis "{}" not in {}'.format(x_axis, ', '.join(col_names)))
+   192	
+   193	        if not y_axis in col_names:
+   194	            die('--y_axis "{}" not in {}'.format(y_axis, ', '.join(col_names)))
+   195	
+   196	        if not s_axis in col_names:
+   197	            die('--s_axis "{}" not in {}'.format(s_axis, ', '.join(col_names)))
+   198	
+   199	
+   200	        if args.x_exclude:
+   201	            for exclude in args.x_exclude:
+   202	                df.drop(df[df[x_axis] == exclude].index, inplace=True)
+   203	
+   204	        if args.y_exclude:
+   205	            for exclude in args.y_exclude:
+   206	                df.drop(df[df[y_axis] == exclude].index, inplace=True)
+   207	
+   208	        x_label = args.x_label or x_axis
+   209	        y_label = args.y_label or y_axis
+   210	
+   211	        if args.sort:
+   212	            df.sort_values(by=[y_axis, x_axis],
+   213	                           ascending=[False, False],
+   214	                           inplace=True)
+   215	
+   216	        x = df[x_axis]
+   217	        y = df[y_axis]
+   218	        img_width = args.image_width or 5 + len(x.unique()) / 5
+   219	        img_height = args.image_height or len(y.unique()) / 4
+   220	        plt.figure(figsize=(img_width, img_height))
+   221	        plt.scatter(x=x, y=y, s=df[s_axis] * args.multiplier, alpha=0.5)
+   222	        plt.xticks(rotation=45, ha='right')
+   223	        #plt.yticks(rotation=45, ha='right')
+   224	        plt.gcf().subplots_adjust(bottom=.4, left=.4)
+   225	        plt.xlabel(x_label)
+   226	        plt.ylabel(y_label)
+   227	        plt.title(title)
+   228	
+   229	        out_file = args.outfile
+   230	        if not out_file:
+   231	            dir_name = os.path.dirname(os.path.abspath(file))
+   232	            root, _ = os.path.splitext(os.path.basename(file))
+   233	            out_file = os.path.join(dir_name, root + '.' + args.format)
+   234	
+   235	        plt.savefig(out_file)
+   236	
+   237	        if args.open_image:
+   238	            plt.show()
+   239	
+   240	        print('Done, see "{}"'.format(out_file))
+   241	
+   242	
+   243	# --------------------------------------------------
+   244	if __name__ == '__main__':
+   245	    main()
+````
+
+\newpage
+
+# Chapter 63: Writing Pipelines in Python
 
 > Falling in love with code means falling in love with problem solving and being a part of a forever ongoing conversation. -- Kathryn Barrett
 
@@ -10781,10 +11159,45 @@ Done.
 The `parallel` version looks out of order because the jobs are run as quickly as possible in whatever order that happens.
 \newpage
 
-# Chapter 62: BAM to FASTx in Python
+# Chapter 64: BAM to FASTx in Python
 
-Same as `bam2fa.sh` but in Python.
+Revisiting the BAM-to-FASTA problem we solved with `bam2fa.sh`, let's look at how we might accomplish this with Python. About half of the Python version is devoted to `get_args` where we define an option for the ouptut `-f|--format` to be constrained to the `choices` of 'fasta' (default) or 'fastq' (which are also the names of the subargument to `samtools`), the `-o|--outdir` directory, and the number of `-p|--procs` processes for `parallel` to run concurrently. I also added a `-v|--verbose` flag to see the output from running `samtools` processes or to keep quite (the default).
 
+The Python version of this code has a few more options but mostly runs just the same. Whereas in the `bash` version, I wrote all the commands to a temporary file, in this version I make a `list` of `commands` that I pass to the `parallelprocs.run` function. This is a module that encapsulates all the logic for run the commands with the `parallel` program if available otherwise to run them serially. This function returns `True` or `False` to indicate whether the processes were run but may also throw an `Exception` so we need to use `try/catch`. 
+
+Most of the details in this program have to do with formulating the output file names by finding the "root" of the basename for each input file. 
+
+````
+>>> import os
+>>> os.path.basename('/path/to/sample.bam')
+'sample.bam'
+>>> os.path.splitext('sample.bam')
+('sample', '.bam')
+````
+
+You have to run `splitext` on the `basename`:
+
+````
+>>> os.path.splitext('/path/to/sample.bam')
+('/path/to/sample', '.bam')
+````
+
+Since `splitext` returns a 2-tuple, we can unpack into two variables; but we don't actually need the 2nd value (the current extension), so we use the underscore (`_`) as a throwaway placeholder:
+
+````
+>>> root, _ = os.path.splitext('sample.bam')
+>>> root
+'sample'
+````
+
+It is not necessary to use `_` -- you are welcome to have a named variable, but I like to do this for two reasons:
+
+1. It shows to the reader that I know I'm not using this value.
+2. Some linters will complain about unused variables, so I avoid that warning.
+
+If you care to look at the source for `parallelprocs`, it can be found here:
+
+	https://github.com/kyclark/parallelprocs
 \newpage
 
 ## Solution
@@ -10827,54 +11240,66 @@ Same as `bam2fa.sh` but in Python.
     35	                        type=str,
     36	                        default='')
     37	
-    38	    return parser.parse_args()
-    39	
-    40	
-    41	# --------------------------------------------------
-    42	def main():
-    43	    """Make a jazz noise here"""
+    38	    parser.add_argument('-p',
+    39	                        '--procs',
+    40	                        help='Num procs',
+    41	                        metavar='int',
+    42	                        type=int,
+    43	                        default=0)
     44	
-    45	    args = get_args()
-    46	    out_fmt = args.format
-    47	    out_dir = args.outdir or out_fmt
-    48	    out_ext = '.fa' if out_fmt == 'fasta' else '.fq'
+    45	    parser.add_argument('-v', '--verbose', help='Verbose', action='store_true')
+    46	
+    47	    return parser.parse_args()
+    48	
     49	
-    50	    if not os.path.isdir(out_dir):
-    51	        os.makedirs(out_dir)
-    52	
-    53	    commands = []
-    54	    for i, file in enumerate(args.file):
-    55	        if not os.path.isfile(file):
-    56	            warn('"{}" is not a file'.format(file))
-    57	            continue
+    50	# --------------------------------------------------
+    51	def main():
+    52	    """Make a jazz noise here"""
+    53	
+    54	    args = get_args()
+    55	    out_fmt = args.format
+    56	    out_dir = args.outdir or out_fmt
+    57	    out_ext = '.fa' if out_fmt == 'fasta' else '.fq'
     58	
-    59	        basename, _ = os.path.splitext(os.path.basename(file))
-    60	        out_path = os.path.join(out_dir, basename + out_ext)
-    61	        commands.append('samtools {} "{}" > {}'.format(
-    62	            out_fmt, file, out_path))
-    63	
-    64	    try:
-    65	        run(commands, halt=1, num_procs=8, verbose=True)
-    66	    except Exception as e:
-    67	        print(e)
-    68	
-    69	    print('Done, see output in "{}"'.format(out_dir))
-    70	
-    71	
-    72	# --------------------------------------------------
-    73	if __name__ == '__main__':
-    74	    main()
+    59	    if not os.path.isdir(out_dir):
+    60	        os.makedirs(out_dir)
+    61	
+    62	    commands = []
+    63	    for i, file in enumerate(args.file, start=1):
+    64	        if not os.path.isfile(file):
+    65	            warn('"{}" is not a file'.format(file))
+    66	            continue
+    67	
+    68	        basename = os.path.basename(file)
+    69	        root, _ = os.path.splitext(basename)
+    70	        out_path = os.path.join(out_dir, root + out_ext)
+    71	        print('{:3}: {}'.format(i, basename))
+    72	        commands.append('samtools {} "{}" > {}'.format(out_fmt, file,
+    73	                                                       out_path))
+    74	    try:
+    75	        ok = run(commands, halt=1, num_procs=args.procs, verbose=args.verbose)
+    76	        if not ok:
+    77	            print('Something went wrong')
+    78	    except Exception as e:
+    79	        print(e)
+    80	
+    81	    print('Done, see output in "{}"'.format(out_dir))
+    82	
+    83	
+    84	# --------------------------------------------------
+    85	if __name__ == '__main__':
+    86	    main()
 ````
 
 \newpage
 
-# Chapter 63: BLAST Pipeline
+# Chapter 65: BLAST Pipeline
 
 Everyone needs a thneed.
 
 \newpage
 
-# Chapter 64: CD-HIT Pipeline
+# Chapter 66: CD-HIT Pipeline
 
 Let's take the `cd-hit` cluster exercise and extend it to where we take the proteins FASTA, run cd-hit, and find the unclustered proteins all in one go. First things first, we need to ensure `cd-hit` is on our system. It's highly unlikely that it is, so let's figure out how to install it.
 
@@ -11105,7 +11530,7 @@ Now we can try out our new code:
 
 \newpage
 
-# Chapter 65: Centrifuge Pipeline in Python
+# Chapter 67: Centrifuge Pipeline in Python
 
 \newpage
 

@@ -38,14 +38,14 @@ def get_args():
                         choices=['fasta', 'fastq'],
                         default='')
 
-    parser.add_argument('-o',
+    parser.add_argument('-O',
                         '--out_format',
                         help='Output file format',
                         metavar='str',
                         choices=['fasta', 'fastq', 'fasta-2line'],
                         default='')
 
-    parser.add_argument('-O',
+    parser.add_argument('-o',
                         '--outfile',
                         help='Output file',
                         metavar='FILE',

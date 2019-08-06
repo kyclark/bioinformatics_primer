@@ -36,7 +36,7 @@ def get_args():
                         help='Input file format',
                         metavar='str',
                         choices=['fasta', 'fastq'],
-                        default='fasta')
+                        default='')
 
     parser.add_argument('-o',
                         '--out_format',
@@ -55,21 +55,45 @@ def get_args():
 
 
 # --------------------------------------------------
+def guess_format(file):
+    """Guess format from extension"""
+
+    _, ext = os.path.splitext(file)
+    ext = ext[1:] if ext.startswith('.') else ext
+
+    return 'fasta' if re.match(
+        'f(ast|n)?a$', ext) else 'fastq' if re.match('f(ast)?q$', ext) else ''
+
+
+# --------------------------------------------------
+def test_guess_format():
+    """Test guess_format"""
+
+    assert guess_format('/foo/bar.fa') == 'fasta'
+    assert guess_format('/foo/bar.fna') == 'fasta'
+    assert guess_format('/foo/bar.fasta') == 'fasta'
+    assert guess_format('/foo/bar.fq') == 'fastq'
+    assert guess_format('/foo/bar.fastq') == 'fastq'
+    assert guess_format('/foo/bar.fx') == ''
+
+
+# --------------------------------------------------
 def main():
     """Make a jazz noise here"""
 
     args = get_args()
-    out_fmt = args.out_format or args.format
     regex = re.compile(args.pattern)
     out_fh = args.outfile or sys.stdout
     checked, took = 0, 0
 
-    for file in args.file:
-        for rec in SeqIO.parse(file, args.format):
+    for fh in args.file:
+        in_format = args.format or guess_format(fh.name)
+        for rec in SeqIO.parse(fh, in_format):
             checked += 1
+            out_fmt = args.out_format or args.format
             if any(map(regex.search, [rec.id, rec.description])):
                 took += 1
-                SeqIO.write(rec, out_fh, out_fmt)
+                SeqIO.write(rec, out_fh, args.out_format or in_format)
 
     print(f'Done, checked {checked}, took {took}.', file=sys.stderr)
 

@@ -6,7 +6,7 @@ We can use the relative frequency of these bases to identify short sequences tha
 For this exercise, we'll assume we're reading sequences that occur separately on each line of an input text file.
 Note that bases may be in lower- or uppercase:
 
----
+----
 $ cat inputs/sample1.txt
 ACgt
 ----

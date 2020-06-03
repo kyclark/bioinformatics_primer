@@ -6,17 +6,23 @@ import random
 import string
 import re
 from subprocess import getstatusoutput, getoutput
-from random import shuffle
-from shutil import rmtree
 
 prg = './gc.py'
-sample1 = 'samples/sample1.txt'
-sample2 = 'samples/sample2.txt'
+sample1 = 'inputs/sample1.txt'
+sample2 = 'inputs/sample2.txt'
+sample3 = 'inputs/sample3.txt'
+
+
+# --------------------------------------------------
+def test_exists():
+    """ usage """
+
+    assert os.path.isfile(prg)
 
 
 # --------------------------------------------------
 def test_usage():
-    """usage"""
+    """ usage """
 
     for flag in ['', '-h', '--help']:
         out = getoutput('{} {}'.format(prg, flag))
@@ -25,40 +31,64 @@ def test_usage():
 
 # --------------------------------------------------
 def test_bad_input():
-    """fails on bad input"""
+    """ fails on bad input """
 
-    rv, out = getstatusoutput('{} foo'.format(prg))
-    assert rv == 1
-    assert out == '"foo" is not a file'
+    bad = random_string()
+    rv, out = getstatusoutput(f'{prg} {bad}')
+    assert rv != 0
+    assert out.lower().startswith('usage:')
+    assert re.search(f"No such file or directory: '{bad}'", out)
 
 
 # --------------------------------------------------
 def test_good_input1():
-    """works on good input"""
+    """ works on good input """
 
-    rv, out = getstatusoutput('{} {}'.format(prg, sample1))
-    expected = """  1:   9%
-  2:  19%
-  3:  19%
-  4:  22%
-  5:  32%
-  6:  21%""".rstrip()
+    rv, out = getstatusoutput(f'{prg} {sample1}')
     assert rv == 0
-    assert out == expected
+    assert out == ' 50%: ACgt'
+
 
 # --------------------------------------------------
 def test_good_input2():
-    """works on good input"""
+    """ works on good input """
 
-    rv, out = getstatusoutput('{} {}'.format(prg, sample2))
-    expected = """  1:  29%
-  2:  34%
-  3:  26%
-  4:  34%
-  5:  29%
-  6:  29%
-  7:  37%
-  8:  18%
-  9:  34%""".rstrip()
+    rv, out = getstatusoutput(f'{prg} {sample2}')
+    expected = '\n'.join([
+        ' 10%: ATTTACAATAATTTAATAAAATTAACTAGAAATAAAATATTGTATGAAAATATGTTAAAT',
+        ' 20%: AATGAAAGTTTTTCAGATCGTTTAATAATATTTTTCTTCCATTTTGCTTTTTTCTAAAAT',
+        ' 20%: TGTTCAAAAACAAACTTCAAAGGAAAATCTTCAAAATTTACATGATTTTATATTTAAACA',
+        ' 23%: AATAGAGTTAAGTATAAGAGAAATTGGATATGGTGATGCTTCAATAAATAAAAAAATGAA',
+        ' 33%: AGAGTATGTCAATGTGATGTACGCAATAATTGACAAAGTTGATTCATGGGAAAATCTTGA',
+        ' 21%: TTTATCTACAAAAACTAAATTCTTTTCTGAATTTATTAATGTCGATAAGGAATCTACATT',
+    ])
     assert rv == 0
     assert out == expected
+
+
+# --------------------------------------------------
+def test_good_input3():
+    """ works on good input """
+
+    rv, out = getstatusoutput(f'{prg} {sample3}')
+    expected = '\n'.join([
+        ' 30%: TTTGTAAAGTCTGGATTAACTGCTATAAAATCGGAAACCATAACACCTTTTAGAGTTAAA',
+        ' 35%: GAATCTCCTGTTCAAATGGAATGTATTGTTAATGATGTTATTGAACTTGGAGACCAAGGT',
+        ' 26%: GGAGCAGGAAATTTAGTAGTATGTGAAATAAAAATGATTCACATTAATGAAGATATTCTT',
+        ' 35%: gatgatgaaggaattattgatccaaataaaattaaattagtcggacgcatgggtggaaac',
+        ' 30%: TGGTATTGTAAAACTACCAACGAATCTATCTTTGAAGTTGTTAAACCTATCCGTAATTTA',
+        ' 30%: ggtattggtgttgatcagattcctaaacgaattaaaaatagctatattcttagtggaaat',
+        ' 38%: GATTTaggtatgcTAGGAAATATAGAAGCCTTacctaccatCGAAGAggttgAAGAATAC',
+        ' 18%: AAAAAAGAAAACTAACactataaaatgaaaTAATTAAATTTTAagtagtgaagatgaaga',
+        ' 35%: CAATGCTGAATTTGAATAATTTCCATGTGAATTGGTGGAATATTGTTCTAACAGTGCACG',
+    ])
+    assert rv == 0
+    assert out == expected
+
+
+# --------------------------------------------------
+def random_string():
+    """ Generate a random string """
+
+    k = random.randint(5, 10)
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=k))

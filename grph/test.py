@@ -55,6 +55,7 @@ def test_find_kmers():
     assert grph.find_kmers('ACTG', 3) == ['ACT', 'CTG']
     assert grph.find_kmers('ACTG', 4) == ['ACTG']
 
+
 # --------------------------------------------------
 def run_it(in_file, k):
     """run"""
@@ -69,45 +70,54 @@ def run_it(in_file, k):
     assert rv == 0
     assert out.rstrip() == expected
 
+
 # --------------------------------------------------
 def test_01():
     """runs ok"""
     run_it('sample1.fa', 3)
+
 
 # --------------------------------------------------
 def test_02():
     """runs ok"""
     run_it('sample1.fa', 4)
 
+
 # --------------------------------------------------
 def test_03():
     """runs ok"""
     run_it('sample1.fa', 5)
+
 
 # --------------------------------------------------
 def test_04():
     """runs ok"""
     run_it('sample2.fa', 3)
 
+
 # --------------------------------------------------
 def test_05():
     """runs ok"""
     run_it('sample2.fa', 4)
+
 
 # --------------------------------------------------
 def test_06():
     """runs ok"""
     run_it('sample2.fa', 5)
 
+
 # --------------------------------------------------
 def test_07():
     """runs ok"""
     run_it('sample3.fa', 3)
 
+
 # --------------------------------------------------
 def test_08():
     """runs ok"""
     run_it('sample3.fa', 4)
+
 
 # --------------------------------------------------
 def test_09():
